@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!-- iOS PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="养殖场管理" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <!-- Theme colors matching the app -->
+    <meta name="theme-color" content="#4CAF50" />
+    <link rel="stylesheet" href="src/styles/pwa.css" />
+    <!-- iOS icons -->
+    <link rel="apple-touch-icon" href="/pwa-192x192.png" />
+    <title>养殖场管理</title>
+  </head>
+  <body>
+    <div id="splash-screen" class="pwa-splash-screen" aria-label="加载中" role="status">
+      <div class="splash-content">
+        <img src="/pwa-192x192.png" alt="养殖场管理" class="pwa-splash-logo" />
+        <div class="pwa-loading-container" aria-label="加载中提示">
+          <div class="pwa-spinner" aria-label="加载中动画" role="img"></div>
+          <p class="pwa-loading-text">加载中...</p>
+        </div>
+      </div>
+    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,475 @@
+:root {
+  --pwa-primary: #4CAF50;
+  --pwa-primary-light: #81c784;
+  --pwa-primary-dark: #388e3c;
+  --pwa-bg: #ffffff;
+  --pwa-bg-secondary: #f5f5f5;
+  --pwa-text: #212121;
+  --pwa-text-secondary: #757575;
+  --pwa-error: #f44336;
+  --pwa-warning: #ff9800;
+  --pwa-success: #4CAF50;
+  --pwa-transition: 0.3s ease;
+}
+
+.pwa-splash-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--pwa-primary) 0%, var(--pwa-primary-dark) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 1;
+  transition: opacity 0.5s ease-out;
+}
+
+.pwa-splash-screen.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.pwa-splash-logo {
+  width: 120px;
+  height: 120px;
+  background: var(--pwa-bg);
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  margin-bottom: 24px;
+  animation: splash-bounce 0.6s ease-out;
+}
+
+.pwa-splash-logo svg {
+  width: 72px;
+  height: 72px;
+  fill: var(--pwa-primary);
+}
+
+.pwa-splash-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--pwa-bg);
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.pwa-splash-subtitle {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+}
+
+@keyframes splash-fade-out {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.splash-fade-out {
+  animation: splash-fade-out 0.5s ease-out forwards;
+}
+
+@keyframes splash-bounce {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes spinner-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.pwa-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid var(--pwa-bg-secondary);
+  border-top-color: var(--pwa-primary);
+  border-radius: 50%;
+  animation: spinner-rotate 0.8s linear infinite;
+}
+
+.pwa-spinner-sm {
+  width: 24px;
+  height: 24px;
+  border-width: 3px;
+}
+
+.pwa-spinner-lg {
+  width: 56px;
+  height: 56px;
+  border-width: 5px;
+}
+
+@keyframes install-banner-slide {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes install-banner-slide-out {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+.pwa-install-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--pwa-bg);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 1000;
+  animation: install-banner-slide 0.4s ease-out;
+}
+
+.pwa-install-banner.slide-out {
+  animation: install-banner-slide-out 0.3s ease-in forwards;
+}
+
+.pwa-install-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.pwa-install-banner-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--pwa-primary);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pwa-install-banner-icon svg {
+  width: 28px;
+  height: 28px;
+  fill: white;
+}
+
+.pwa-install-banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.pwa-install-banner-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--pwa-text);
+  margin-bottom: 2px;
+}
+
+.pwa-install-banner-subtitle {
+  font-size: 13px;
+  color: var(--pwa-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pwa-install-banner-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pwa-install-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--pwa-transition);
+  border: none;
+}
+
+.pwa-install-btn-primary {
+  background: var(--pwa-primary);
+  color: white;
+}
+
+.pwa-install-btn-primary:hover {
+  background: var(--pwa-primary-dark);
+  transform: scale(1.02);
+}
+
+.pwa-install-btn-secondary {
+  background: var(--pwa-bg-secondary);
+  color: var(--pwa-text);
+}
+
+.pwa-install-btn-secondary:hover {
+  background: #e0e0e0;
+}
+
+.pwa-network-status {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 1001;
+  transition: var(--pwa-transition);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.pwa-network-status.online {
+  background: var(--pwa-success);
+  color: white;
+}
+
+.pwa-network-status.offline {
+  background: var(--pwa-warning);
+  color: white;
+}
+
+.pwa-network-status.error {
+  background: var(--pwa-error);
+  color: white;
+}
+
+.pwa-network-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.pwa-network-status.online .pwa-network-indicator {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.pwa-offline-badge {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  background: var(--pwa-warning);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  animation: badge-pop 0.3s ease-out;
+}
+
+@keyframes badge-pop {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.pwa-offline-badge svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.pwa-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 32px;
+}
+
+.pwa-loading-text {
+  font-size: 14px;
+  color: var(--pwa-text-secondary);
+  font-weight: 500;
+}
+
+.pwa-loading-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.pwa-loading-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--pwa-primary);
+  border-radius: 50%;
+  animation: dot-bounce 1.4s infinite ease-in-out;
+}
+
+.pwa-loading-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.pwa-loading-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.pwa-loading-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes dot-bounce {
+  0%, 80%, 100% {
+    transform: scale(0.6);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .pwa-splash-logo {
+    width: 96px;
+    height: 96px;
+    border-radius: 20px;
+  }
+
+  .pwa-splash-logo svg {
+    width: 56px;
+    height: 56px;
+  }
+
+  .pwa-splash-title {
+    font-size: 24px;
+  }
+
+  .pwa-splash-subtitle {
+    font-size: 14px;
+  }
+
+  .pwa-install-banner {
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .pwa-install-banner-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .pwa-install-btn {
+    flex: 1;
+    padding: 12px 16px;
+  }
+
+  .pwa-install-banner-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+
+  .pwa-install-banner-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+@media (min-width: 768px) {
+  .pwa-install-banner {
+    max-width: 480px;
+    left: auto;
+    right: 24px;
+    bottom: 24px;
+    border-radius: 16px;
+  }
+
+  .pwa-offline-badge {
+    bottom: 24px;
+    right: 24px;
+  }
+
+  .pwa-network-status {
+    top: 24px;
+  }
+}
+
+@keyframes slide-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-down {
+  animation: slide-down 0.3s ease-out;
+}
