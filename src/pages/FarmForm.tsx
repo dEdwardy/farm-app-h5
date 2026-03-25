@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useParams, useNavigate } from 'react-router-dom'
@@ -53,6 +53,17 @@ interface ImageItem {
   error?: boolean
 }
 
+const getFieldInputId = (name: string) => `farm-form-${name}`
+const getFieldErrorId = (name: string) => `farm-form-${name}-error`
+
+const isObjectUrl = (url: string) => url.startsWith('blob:')
+
+const revokeObjectUrl = (url: string) => {
+  if (isObjectUrl(url)) {
+    URL.revokeObjectURL(url)
+  }
+}
+
 export default function FarmForm() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -65,6 +76,7 @@ export default function FarmForm() {
   const [safetyInfo, setSafetyInfo] = useState<ImageItem[]>([])
   const [originalFiles, setOriginalFiles] = useState<FarmFile[]>([])
   const [error, setError] = useState<string | null>(null)
+  const previewImagesRef = useRef<ImageItem[]>([])
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FarmFormData>({
     resolver: zodResolver(farmFormSchema),
@@ -72,6 +84,16 @@ export default function FarmForm() {
   })
 
   const hasTreatment = watch('has_treatment_facility')
+
+  useEffect(() => {
+    previewImagesRef.current = [...farmImages, ...tailWaterImages, ...safetyInfo]
+  }, [farmImages, tailWaterImages, safetyInfo])
+
+  useEffect(() => {
+    return () => {
+      previewImagesRef.current.forEach(image => revokeObjectUrl(image.url))
+    }
+  }, [])
 
   const loadFarm = useCallback(async (farmId: string) => {
     try {
@@ -160,6 +182,7 @@ export default function FarmForm() {
             ? { url, name: file.name, size: file.size }
             : item
         ))
+        revokeObjectUrl(tempItem.url)
       } catch (err) {
         console.error('Upload failed:', err)
         setImages(prev => prev.map(item => 
@@ -175,7 +198,13 @@ export default function FarmForm() {
 
   const handleImageRemove = (type: 'farm' | 'tailWater' | 'safety') => (index: number) => {
     const setImages = type === 'farm' ? setFarmImages : type === 'tailWater' ? setTailWaterImages : setSafetyInfo
-    setImages(prev => prev.filter((_, i) => i !== index))
+    setImages(prev => {
+      const removedImage = prev[index]
+      if (removedImage) {
+        revokeObjectUrl(removedImage.url)
+      }
+      return prev.filter((_, i) => i !== index)
+    })
   }
 
   const getImageUrls = (images: ImageItem[]) => {
@@ -242,24 +271,31 @@ export default function FarmForm() {
   }
 
   const renderField = (field: typeof formFields[0]) => {
+    const inputId = getFieldInputId(field.name)
+    const errorId = getFieldErrorId(field.name)
+    const fieldError = errors[field.name as keyof typeof errors]
+
     switch (field.type) {
       case 'text':
       case 'number':
         return (
           <div key={field.name} className="mb-5">
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1.5">
               {field.label}
               {field.required && <span className="text-red-500 ml-0.5">*</span>}
             </label>
             <input
+              id={inputId}
               type={field.type === 'number' ? 'text' : 'text'}
               inputMode={field.type === 'number' ? 'decimal' : 'text'}
               {...register(field.name as keyof FarmFormData)}
               placeholder={field.placeholder}
+              aria-invalid={fieldError ? 'true' : 'false'}
+              aria-describedby={fieldError ? errorId : undefined}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:bg-white focus:border-primary-400 focus:ring-2 focus:ring-primary-100 focus:outline-none transition-all duration-200"
             />
-            {errors[field.name as keyof typeof errors] && (
-              <p className="text-red-500 text-xs mt-1.5">{errors[field.name as keyof typeof errors]?.message}</p>
+            {fieldError && (
+              <p id={errorId} className="text-red-500 text-xs mt-1.5">{fieldError?.message}</p>
             )}
           </div>
         )
@@ -267,11 +303,14 @@ export default function FarmForm() {
       case 'select':
         return (
           <div key={field.name} className="mb-5">
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1.5">
               {field.label}
             </label>
             <select
+              id={inputId}
               {...register(field.name as keyof FarmFormData)}
+              aria-invalid={fieldError ? 'true' : 'false'}
+              aria-describedby={fieldError ? errorId : undefined}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:bg-white focus:border-primary-400 focus:ring-2 focus:ring-primary-100 focus:outline-none transition-all duration-200"
             >
               <option value="">{field.placeholder}</option>
@@ -279,6 +318,9 @@ export default function FarmForm() {
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
+            {fieldError && (
+              <p id={errorId} className="text-red-500 text-xs mt-1.5">{fieldError?.message}</p>
+            )}
           </div>
         )
 
@@ -369,11 +411,12 @@ export default function FarmForm() {
                 ) : img.error ? (
                   <span className="text-red-500 text-xs ml-2">失败</span>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleImageRemove(type)(i)}
-                    className="ml-2 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                  >
+                    <button
+                      type="button"
+                      onClick={() => handleImageRemove(type)(i)}
+                      aria-label={`删除文件 ${img.name}`}
+                      className="ml-2 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -413,6 +456,7 @@ export default function FarmForm() {
                     <button
                       type="button"
                       onClick={() => handleImageRemove(type)(i)}
+                      aria-label={`删除图片 ${img.name}`}
                       className="absolute top-0 right-0 w-6 h-6 bg-red-500 text-white rounded-bl-lg flex items-center justify-center hover:bg-red-600 transition-colors"
                     >
                       ×
@@ -442,7 +486,7 @@ export default function FarmForm() {
   return (
     <div className="h-full flex flex-col bg-gray-50">
       <div className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-4 flex-shrink-0 flex items-center shadow-lg">
-        <button onClick={() => navigate(-1)} className="mr-3 p-1.5 -ml-1.5 rounded-lg hover:bg-white/20 transition-colors">
+        <button type="button" onClick={() => navigate(-1)} aria-label="返回上一页" className="mr-3 p-1.5 -ml-1.5 rounded-lg hover:bg-white/20 transition-colors">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
@@ -513,7 +557,7 @@ export default function FarmForm() {
             取消
           </button>
           <button
-            onClick={handleSubmit(onSubmit)}
+            type="submit"
             disabled={submitting}
             className="flex-1 py-3.5 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl font-medium shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 hover:-translate-y-0.5 active:translate-y-0 disabled:bg-gray-200 disabled:shadow-none disabled:translate-y-0 transition-all duration-200"
           >

@@ -1,20 +1,44 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { exportFarms, importFarms, ImportResult } from '../services/fileService';
 
 interface ImportExportModalProps {
   visible: boolean;
+  initialTab?: 'import' | 'export';
   onClose: () => void;
   onRefresh: () => void;
 }
 
 export const ImportExportModal: React.FC<ImportExportModalProps> = ({
   visible,
+  initialTab = 'import',
   onClose,
   onRefresh
 }) => {
-  const [activeTab, setActiveTab] = useState<'import' | 'export'>('import');
+  const [activeTab, setActiveTab] = useState<'import' | 'export'>(initialTab);
   const [isLoading, setIsLoading] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+
+  useEffect(() => {
+    if (visible) {
+      setActiveTab(initialTab);
+      setImportResult(null);
+    }
+  }, [visible, initialTab]);
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [visible, onClose]);
 
   const handleImport = async (file: File) => {
     setIsLoading(true);
@@ -43,7 +67,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `农场数据_${new Date().toISOString().split('T')[0]}.xlsx`;
+        link.download = `养殖场数据_${new Date().toISOString().split('T')[0]}.xlsx`;
         link.click();
         URL.revokeObjectURL(url);
       }
@@ -58,18 +82,28 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl w-11/12 max-w-md shadow-2xl shadow-black/20 transform animate-in zoom-in-95 duration-200">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="import-export-modal-title"
+        className="bg-white rounded-2xl w-11/12 max-w-md shadow-2xl shadow-black/20 transform animate-in zoom-in-95 duration-200"
+      >
         <div className="flex justify-between items-center p-5 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">数据导入导出</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center transition-colors">
+          <h2 id="import-export-modal-title" className="text-lg font-bold text-gray-900">数据导入导出</h2>
+          <button onClick={onClose} aria-label="关闭弹窗" className="w-8 h-8 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center transition-colors">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <div className="flex border-b border-gray-100">
+        <div className="flex border-b border-gray-100" role="tablist" aria-label="导入导出选项卡">
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'import'}
+            aria-controls="import-panel"
+            id="import-tab"
             className={`flex-1 py-3.5 font-medium text-sm transition-all duration-200 relative ${activeTab === 'import' ? 'text-primary-600' : 'text-gray-500 hover:text-gray-700'}`}
             onClick={() => setActiveTab('import')}
           >
@@ -79,6 +113,11 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
             )}
           </button>
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === 'export'}
+            aria-controls="export-panel"
+            id="export-tab"
             className={`flex-1 py-3.5 font-medium text-sm transition-all duration-200 relative ${activeTab === 'export' ? 'text-primary-600' : 'text-gray-500 hover:text-gray-700'}`}
             onClick={() => setActiveTab('export')}
           >
@@ -91,8 +130,8 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
 
         <div className="p-5">
           {activeTab === 'import' ? (
-            <div>
-              <p className="text-gray-600 mb-4">选择 Excel/CSV 文件导入农场数据</p>
+            <div role="tabpanel" id="import-panel" aria-labelledby="import-tab">
+              <p className="text-gray-600 mb-4">选择 Excel/CSV 文件导入养殖场数据</p>
               <div 
                 className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 hover:border-primary-300 transition-all duration-200"
                 onClick={() => {
@@ -130,9 +169,10 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
               </div>
             </div>
           ) : (
-            <div>
-              <p className="text-gray-600 mb-4">导出所有农场数据为 Excel 文件</p>
+            <div role="tabpanel" id="export-panel" aria-labelledby="export-tab">
+              <p className="text-gray-600 mb-4">导出所有养殖场数据为 Excel 文件</p>
               <button
+                type="button"
                 onClick={handleExport}
                 disabled={isLoading}
                 className="w-full bg-gradient-to-r from-primary-500 to-primary-600 text-white py-3.5 rounded-xl font-medium shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 hover:-translate-y-0.5 active:translate-y-0 disabled:bg-gray-200 disabled:shadow-none disabled:translate-y-0 transition-all duration-200 flex items-center justify-center"

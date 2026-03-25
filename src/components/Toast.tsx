@@ -53,7 +53,7 @@ function ToastContainer({ toasts, onClose }: { toasts: Toast[]; onClose: (id: nu
   if (toasts.length === 0) return null
 
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 w-full max-w-sm px-4">
+    <div aria-live="polite" aria-atomic="true" className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 w-full max-w-sm px-4">
       {toasts.map(toast => (
         <ToastItem key={toast.id} toast={toast} onClose={() => onClose(toast.id)} />
       ))}
@@ -96,10 +96,11 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
     <div
       className={`${styles[toast.type]} px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-slide-down`}
       role="alert"
+      aria-live="polite"
     >
-      {icons[toast.type]}
+      <span aria-hidden="true">{icons[toast.type]}</span>
       <span className="flex-1 text-sm font-medium">{toast.message}</span>
-      <button onClick={onClose} className="p-1 hover:bg-white/20 rounded">
+      <button type="button" onClick={onClose} aria-label="关闭提示" className="p-1 hover:bg-white/20 rounded">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>

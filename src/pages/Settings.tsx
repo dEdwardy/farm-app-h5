@@ -1,17 +1,24 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 
 export default function Settings() {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
 
   const handleLogout = async () => {
-    if (!confirm('确定要退出登录吗？')) return
     try {
+      setIsSigningOut(true)
       await signOut()
+      setShowLogoutConfirm(false)
       navigate('/login')
     } catch (error) {
       console.error('Logout failed:', error)
+    } finally {
+      setIsSigningOut(false)
     }
   }
 
@@ -64,7 +71,8 @@ export default function Settings() {
 
         {/* Logout Button */}
         <button
-          onClick={handleLogout}
+          type="button"
+          onClick={() => setShowLogoutConfirm(true)}
           className="w-full py-4 mt-8 bg-white rounded-2xl text-red-500 font-semibold shadow-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -77,6 +85,18 @@ export default function Settings() {
           养殖场管理 v1.0.0
         </p>
       </div>
+
+      <ConfirmDialog
+        open={showLogoutConfirm}
+        title="退出登录"
+        message="确定要退出当前账号吗？退出后需要重新登录才能继续使用。"
+        confirmText="退出登录"
+        busyText="退出中..."
+        danger
+        busy={isSigningOut}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={handleLogout}
+      />
     </div>
   )
 }

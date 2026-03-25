@@ -33,7 +33,7 @@ export function InstallPrompt() {
       <div
         className={`pwa-install-banner ${isAnimatingOut ? 'slide-out' : ''}`}
         role="dialog"
-        aria-label="Add to Home Screen instructions"
+        aria-label="添加到主屏幕说明"
       >
         <div className="pwa-install-banner-content">
           <div className="pwa-install-banner-icon">
@@ -42,9 +42,9 @@ export function InstallPrompt() {
             </svg>
           </div>
           <div className="pwa-install-banner-text">
-            <div className="pwa-install-banner-title">Add to Home Screen</div>
+            <div className="pwa-install-banner-title">添加到主屏幕</div>
             <div className="pwa-install-banner-subtitle">
-              {iosInstallInstructions || 'Tap the share button and select "Add to Home Screen"'}
+              {iosInstallInstructions || '点击分享按钮，然后选择“添加到主屏幕”'}
             </div>
           </div>
         </div>
@@ -53,9 +53,9 @@ export function InstallPrompt() {
             type="button"
             className="pwa-install-btn pwa-install-btn-secondary"
             onClick={handleDismiss}
-            aria-label="Dismiss"
+            aria-label="知道了"
           >
-            Got it
+            知道了
           </button>
         </div>
       </div>
@@ -66,7 +66,7 @@ export function InstallPrompt() {
     <div
       className={`pwa-install-banner ${isAnimatingOut ? 'slide-out' : ''}`}
       role="dialog"
-      aria-label="Install app"
+      aria-label="安装应用"
     >
       <div className="pwa-install-banner-content">
         <div className="pwa-install-banner-icon">
@@ -75,9 +75,9 @@ export function InstallPrompt() {
           </svg>
         </div>
         <div className="pwa-install-banner-text">
-          <div className="pwa-install-banner-title">Install App</div>
+          <div className="pwa-install-banner-title">安装应用</div>
           <div className="pwa-install-banner-subtitle">
-            Add to your home screen for the best experience
+            添加到主屏幕，获得更好的使用体验
           </div>
         </div>
       </div>
@@ -86,17 +86,17 @@ export function InstallPrompt() {
           type="button"
           className="pwa-install-btn pwa-install-btn-secondary"
           onClick={handleDismiss}
-          aria-label="Not now"
+          aria-label="稍后再说"
         >
-          Later
+          稍后再说
         </button>
         <button
           type="button"
           className="pwa-install-btn pwa-install-btn-primary"
           onClick={installPrompt}
-          aria-label="Install app"
+          aria-label="立即安装"
         >
-          Install
+          立即安装
         </button>
       </div>
     </div>

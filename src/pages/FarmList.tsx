@@ -25,10 +25,13 @@ export default function FarmList() {
   const [farms, setFarms] = useState<FarmRow[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
+  const [totalCount, setTotalCount] = useState(0)
   const [showImportExport, setShowImportExport] = useState(false)
+  const [importExportTab, setImportExportTab] = useState<'import' | 'export'>('import')
   
   const debouncedSearch = useDebounce(searchQuery, 300)
   const isInitialMount = useRef(true)
@@ -47,8 +50,16 @@ export default function FarmList() {
       
       if (response.error) {
         console.error('Failed to fetch farms:', response.error)
+        if (reset || currentPage === 1) {
+          setError(response.error)
+          setFarms([])
+          setTotalCount(0)
+        }
         return
       }
+
+      setError(null)
+      setTotalCount(response.totalCount)
       
       if (reset || currentPage === 1) {
         setFarms(response.data)
@@ -58,11 +69,21 @@ export default function FarmList() {
       setHasMore(response.data.length === 10)
     } catch (error) {
       console.error('Failed to fetch farms:', error)
+      if (reset || currentPage === 1) {
+        setError('加载养殖场失败，请稍后重试')
+        setFarms([])
+        setTotalCount(0)
+      }
     } finally {
       setLoading(false)
       setRefreshing(false)
     }
   }, [debouncedSearch])
+
+  const openImportExportModal = (tab: 'import' | 'export') => {
+    setImportExportTab(tab)
+    setShowImportExport(true)
+  }
 
   useEffect(() => {
     if (isInitialMount.current) {
@@ -103,6 +124,10 @@ export default function FarmList() {
     }
   }
 
+  const farmCountText = totalCount > 0 || debouncedSearch.trim()
+    ? `共 ${totalCount} 个养殖场`
+    : '管理您的养殖场'
+
   return (
     <div className="h-full flex flex-col bg-gray-50">
       <div className="bg-gradient-to-r from-primary-500 to-primary-600 text-white px-4 py-4 flex-shrink-0 shadow-lg">
@@ -110,18 +135,18 @@ export default function FarmList() {
           <div>
             <h1 className="text-xl font-bold">养殖场列表</h1>
             <p className="text-primary-100 text-sm mt-1">
-              {farms.length > 0 ? `共 ${farms.length} 个养殖场` : '管理您的养殖场'}
+              {farmCountText}
             </p>
           </div>
           <div className="flex space-x-2">
             <button
-              onClick={() => setShowImportExport(true)}
+              onClick={() => openImportExportModal('import')}
               className="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200"
             >
               导入
             </button>
             <button
-              onClick={() => setShowImportExport(true)}
+              onClick={() => openImportExportModal('export')}
               className="bg-white/20 hover:bg-white/30 backdrop-blur-sm px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200"
             >
               导出
@@ -135,7 +160,10 @@ export default function FarmList() {
           <input
             type="search"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setError(null)
+              setSearchQuery(e.target.value)
+            }}
             placeholder="搜索养殖场..."
             className="w-full px-4 py-2.5 pl-11 bg-gray-50/80 backdrop-blur-sm border border-gray-200/50 rounded-xl text-sm focus:bg-white focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none transition-all duration-200"
           />
@@ -157,7 +185,22 @@ export default function FarmList() {
           </div>
         )}
 
-        {!loading && farms.length === 0 ? (
+        {!loading && error ? (
+          <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+            <div className="w-20 h-20 bg-gradient-to-br from-red-50 to-red-100 rounded-2xl flex items-center justify-center mb-5 shadow-inner">
+              <span className="text-4xl">⚠️</span>
+            </div>
+            <h3 className="text-base font-medium text-gray-700">加载失败</h3>
+            <p className="text-gray-400 text-sm mt-1.5">{error}</p>
+            <button
+              type="button"
+              onClick={() => fetchFarms(true, 1)}
+              className="mt-5 px-4 py-2.5 bg-primary-500 text-white rounded-xl text-sm font-medium shadow-sm hover:bg-primary-600 transition-colors"
+            >
+              重试
+            </button>
+          </div>
+        ) : !loading && farms.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center mb-5 shadow-inner">
               <span className="text-4xl">🏠</span>
@@ -266,6 +309,7 @@ export default function FarmList() {
 
       <ImportExportModal
         visible={showImportExport}
+        initialTab={importExportTab}
         onClose={() => setShowImportExport(false)}
         onRefresh={() => fetchFarms(true, 1)}
       />

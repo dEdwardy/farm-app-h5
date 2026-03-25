@@ -41,19 +41,19 @@ export function NetworkStatus({
     if (!showQuality) return undefined;
     
     if (effectiveType === 'slow-2g' || effectiveType === '2g') {
-      return 'Slow connection';
+      return '网络较慢';
     }
     
     if (effectiveType === '3g') {
-      return '3G connection';
+      return '3G 网络';
     }
     
     if (effectiveType === '4g' || connectionType === 'wifi') {
-      return 'Fast connection';
+      return '网络良好';
     }
     
     if (downlink !== undefined && downlink < 1) {
-      return 'Slow connection';
+      return '网络较慢';
     }
     
     return undefined;
@@ -69,7 +69,7 @@ export function NetworkStatus({
     <div className={`pwa-network-status ${status}`} role="status" aria-live="polite">
       <span className="pwa-network-indicator" aria-hidden="true" />
       <span className="pwa-network-text">
-        {status === 'offline' ? 'You are offline' : 'Back online'}
+        {status === 'offline' ? '当前处于离线状态' : '网络已恢复'}
         {qualityText && ` · ${qualityText}`}
       </span>
     </div>

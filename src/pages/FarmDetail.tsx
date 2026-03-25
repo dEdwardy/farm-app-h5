@@ -1,8 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { dataService } from '../services/dataService'
-import { FarmRow } from '../types/farm'
+import { FarmFile, FarmRow, FormFile } from '../types/farm'
 import { useToast } from '../components/Toast'
+import { ConfirmDialog } from '../components/ConfirmDialog'
+
+type FarmDetailFormData = ReturnType<typeof mapFormData>
+type FarmAsset = FarmFile | FormFile | string
+type PreviewImage = {
+  url: string
+  name: string
+  size: number
+}
 
 const mapFormData = (farmData: FarmRow) => {
   return {
@@ -34,26 +43,36 @@ const mapFormData = (farmData: FarmRow) => {
   }
 }
 
-const formatDisplayValue = (value: any): string => {
+const formatDisplayValue = (value: unknown): string => {
   if (value === null || value === undefined || value === '') return '-'
   return String(value)
 }
 
-const formatValueWithUnit = (value: any, unit: string): string => {
+const formatValueWithUnit = (value: unknown, unit: string): string => {
   if (value === null || value === undefined || value === '') return '-'
   return `${value}${unit}`
+}
+
+const getAssetSize = (img: FarmAsset): number => {
+  if (typeof img === 'string') {
+    return 0
+  }
+
+  return 'size' in img && typeof img.size === 'number' ? img.size : 0
 }
 
 export default function FarmDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { showToast } = useToast()
-  const [formData, setFormData] = useState<any>(null)
+  const [formData, setFormData] = useState<FarmDetailFormData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [previewImages, setPreviewImages] = useState<{ url: string; name: string }[]>([])
+  const [previewImages, setPreviewImages] = useState<PreviewImage[]>([])
   const [showPreview, setShowPreview] = useState(false)
   const [previewIndex, setPreviewIndex] = useState(0)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const fetchFarm = useCallback(async () => {
     if (!id) return
@@ -81,34 +100,45 @@ export default function FarmDetail() {
 
   const handleDelete = async () => {
     if (!id) return
-    if (!confirm('确定要删除这个养殖场吗？此操作不可恢复。')) return
     
     try {
+      setIsDeleting(true)
       const success = await dataService.deleteFarm(id)
       if (success) {
+        setShowDeleteConfirm(false)
         showToast('删除成功', 'success')
         navigate('/')
       }
     } catch (err) {
       console.error('Failed to delete:', err)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
-  const getImageSrc = (img: any): string => {
+  const getImageSrc = (img: FarmAsset): string => {
     if (typeof img === 'string') return img
     return img?.url || ''
   }
 
-  const getImages = (images: any[] | undefined) => {
+  const getImageName = (img: FarmAsset, index: number) => {
+    if (typeof img === 'string') {
+      return img.split('/').pop() || `image_${index}`
+    }
+
+    return img.name || `image_${index}`
+  }
+
+  const getImages = (images: FarmAsset[] | undefined): PreviewImage[] => {
     if (!images || !Array.isArray(images)) return []
     return images.map((img, index) => ({
       url: getImageSrc(img),
-      name: typeof img === 'string' ? img.split('/').pop() || `image_${index}` : img.name || `image_${index}`,
-      size: img.size || 0
+      name: getImageName(img, index),
+      size: getAssetSize(img)
     }))
   }
 
-  const openImagePreview = (images: { url: string; name: string }[], index: number) => {
+  const openImagePreview = (images: PreviewImage[], index: number) => {
     setPreviewImages(images)
     setPreviewIndex(index)
     setShowPreview(true)
@@ -131,9 +161,9 @@ export default function FarmDetail() {
     )
   }
 
-  const farmImages = getImages(formData.farm_images as any)
-  const tailWaterImages = getImages(formData.tail_water_images as any)
-  const safetyInfo = getImages(formData.safety_info as any)
+  const farmImages = getImages(formData.farm_images)
+  const tailWaterImages = getImages(formData.tail_water_images)
+  const safetyInfo = getImages(formData.safety_info)
 
   return (
     <div className="h-full flex flex-col bg-gray-50">
@@ -231,17 +261,19 @@ export default function FarmDetail() {
               {farmImages.length > 0 ? (
                 <div className="grid grid-cols-3 gap-2.5 mt-3">
                   {farmImages.slice(0, 6).map((img, i) => (
-                    <div
+                    <button
                       key={i}
+                      type="button"
                       className="aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-pointer hover:opacity-90 transition-opacity shadow-sm"
                       onClick={() => openImagePreview(farmImages, i)}
+                      aria-label={`预览图片 ${img.name}`}
                     >
                       <img
                         src={img.url}
-                        alt=""
+                        alt={img.name}
                         className="w-full h-full object-cover"
                       />
-                    </div>
+                    </button>
                   ))}
                 </div>
               ) : (
@@ -294,17 +326,19 @@ export default function FarmDetail() {
               {tailWaterImages.length > 0 ? (
                 <div className="grid grid-cols-3 gap-2.5 mt-3">
                   {tailWaterImages.slice(0, 6).map((img, i) => (
-                    <div
+                    <button
                       key={i}
+                      type="button"
                       className="aspect-square rounded-xl overflow-hidden bg-gray-100 cursor-pointer hover:opacity-90 transition-opacity shadow-sm"
                       onClick={() => openImagePreview(tailWaterImages, i)}
+                      aria-label={`预览图片 ${img.name}`}
                     >
                       <img
                         src={img.url}
-                        alt=""
+                        alt={img.name}
                         className="w-full h-full object-cover"
                       />
-                    </div>
+                    </button>
                   ))}
                 </div>
               ) : (
@@ -362,7 +396,8 @@ export default function FarmDetail() {
       {/* 底部操作按钮 */}
       <div className="flex-shrink-0 bg-white border-t border-gray-100 p-4 flex gap-3 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]">
         <button
-          onClick={handleDelete}
+          type="button"
+          onClick={() => setShowDeleteConfirm(true)}
           className="flex-1 py-3.5 border-2 border-red-500 text-red-500 rounded-xl font-medium hover:bg-red-50 active:bg-red-100 transition-colors"
         >
           删除
@@ -378,10 +413,15 @@ export default function FarmDetail() {
       {/* 图片预览 */}
       {showPreview && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="图片预览"
           className="fixed inset-0 bg-black/90 z-50 flex flex-col"
           onClick={() => setShowPreview(false)}
         >
           <button
+            type="button"
+            aria-label="关闭图片预览"
             className="absolute top-4 right-4 w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-white text-xl z-10"
             onClick={() => setShowPreview(false)}
           >
@@ -390,7 +430,7 @@ export default function FarmDetail() {
           <div className="flex-1 flex items-center justify-center p-4">
             <img
               src={previewImages[previewIndex]?.url}
-              alt=""
+              alt={previewImages[previewIndex]?.name || '预览图片'}
               className="max-w-full max-h-full object-contain"
             />
           </div>
@@ -406,6 +446,18 @@ export default function FarmDetail() {
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="删除养殖场"
+        message="确定要删除这个养殖场吗？删除后将无法恢复。"
+        confirmText="确认删除"
+        busyText="删除中..."
+        danger
+        busy={isDeleting}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+      />
     </div>
   )
 }
