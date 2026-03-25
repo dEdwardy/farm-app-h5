@@ -19,6 +19,14 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# Local tooling artifacts
+.agents/
+.omc/
+AGENTS.md
+opencode.json
+skills-lock.json
+tsconfig.tsbuildinfo
+
 # Debug logs
 npm-debug.log*
 yarn-debug.log*
