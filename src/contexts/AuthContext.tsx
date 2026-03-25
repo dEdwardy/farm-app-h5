@@ -26,31 +26,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    let isMounted = true
+    let unsubscribe: (() => void) | undefined
+
     const checkAuth = async () => {
       try {
+        const client = await getSupabase()
+        if (!client) {
+          if (isMounted) {
+            setLoading(false)
+          }
+          return
+        }
+
+        const { data } = client.auth.onAuthStateChange((_event, session) => {
+          if (!isMounted) {
+            return
+          }
+
+          setUser(session?.user ?? null)
+          setLoading(false)
+        })
+        unsubscribe = () => data.subscription.unsubscribe()
+
         if (!hasLocalSession()) {
           setLoading(false)
           return
         }
 
-        const client = await getSupabase()
-        if (!client) {
-          setLoading(false)
-          return
-        }
-
         const { data: { session } } = await client.auth.getSession()
-        if (session?.user) {
+        if (isMounted && session?.user) {
           setUser(session.user)
         }
       } catch (error) {
         console.error('检查登录状态失败:', error)
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
 
     checkAuth()
+
+    return () => {
+      isMounted = false
+      unsubscribe?.()
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {

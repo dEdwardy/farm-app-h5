@@ -2,10 +2,12 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useParams, useNavigate } from 'react-router-dom'
+import { authService } from '../services/authService'
 import { dataService } from '../services/dataService'
 import { uploadImage } from '../services/ossService'
 import { farmFormSchema, FarmFormData, fieldMetaMap } from '../types/schemas'
 import type { FarmFile } from '../types/farm'
+import { getErrorMessage } from '../utils/errorHandler'
 
 const defaultValues: FarmFormData = {
   farm_name: '',
@@ -185,6 +187,10 @@ export default function FarmForm() {
         revokeObjectUrl(tempItem.url)
       } catch (err) {
         console.error('Upload failed:', err)
+        const message = getErrorMessage(err)
+        if (authService.isAuthErrorMessage(message)) {
+          setError(message)
+        }
         setImages(prev => prev.map(item => 
           item.url === tempItem.url && item.uploading
             ? { ...item, uploading: false, error: true }

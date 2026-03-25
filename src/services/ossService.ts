@@ -1,4 +1,5 @@
 import { getSupabase } from './supabase'
+import { authService } from './authService'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || ''
 
@@ -9,8 +10,7 @@ export async function uploadImage(file: File | Blob): Promise<string> {
   }
 
   try {
-    const { data: { session } } = await supabase.auth.getSession()
-    const token = session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY
+    const token = await authService.getRequiredAccessToken()
 
     const fileName = file instanceof File ? file.name : `image_${Date.now()}.jpg`
     const fileType = file instanceof File ? file.type : 'image/jpeg'
@@ -26,7 +26,7 @@ export async function uploadImage(file: File | Blob): Promise<string> {
 
     if (!response.ok) {
       const errText = await response.text()
-      throw new Error(`Edge Function error: ${response.status} - ${errText}`)
+      throw new Error(authService.getProtectedActionErrorMessage(response.status, errText || '图片上传失败'))
     }
 
     const data = await response.json()

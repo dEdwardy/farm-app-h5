@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { exportFarms, importFarms, ImportResult } from '../services/fileService';
+import { showErrorToast, showSuccessToast } from '../utils/errorHandler';
 
 interface ImportExportModalProps {
   visible: boolean;
@@ -47,6 +48,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
       const result = await importFarms(file);
       setImportResult(result);
       if (result.success) {
+        showSuccessToast(result.message);
         onRefresh();
         setTimeout(() => {
           onClose();
@@ -54,6 +56,8 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
       }
     } catch (error) {
       console.error('导入失败:', error);
+      const message = error instanceof Error ? error.message : '导入失败，请稍后重试';
+      setImportResult({ success: false, message });
     } finally {
       setIsLoading(false);
     }
@@ -70,9 +74,11 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
         link.download = `养殖场数据_${new Date().toISOString().split('T')[0]}.xlsx`;
         link.click();
         URL.revokeObjectURL(url);
+        showSuccessToast('导出成功');
       }
     } catch (error) {
       console.error('导出失败:', error);
+      showErrorToast(error);
     } finally {
       setIsLoading(false);
     }

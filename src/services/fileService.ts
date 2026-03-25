@@ -1,4 +1,6 @@
 
+import { authService } from './authService'
+
 export interface ImportError {
   row: number;
   field: string;
@@ -27,34 +29,27 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
  */
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://ngiewoolfwwojqzopbjo.supabase.co';
 
+async function parseErrorResponse(response: Response) {
+  try {
+    return await response.json()
+  } catch {
+    return null
+  }
+}
+
 export async function exportFarms(): Promise<Blob> {
-  const token = await getToken();
+  const token = await authService.getRequiredAccessToken();
   const response = await fetch(`${SUPABASE_URL}/functions/v1/farm-file/export`, {
     method: 'POST',
-    headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+    headers: { 'Authorization': `Bearer ${token}` },
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || 'Export farms failed');
+    const errorData = await parseErrorResponse(response);
+    throw new Error(authService.getProtectedActionErrorMessage(response.status, errorData?.error || '导出失败'));
   }
 
   return response.blob();
-}
-
-// 获取token的辅助函数
-async function getToken(): Promise<string | null> {
-  try {
-    const { getSupabase } = await import('./supabase');
-    const supabase = await getSupabase();
-    if (supabase) {
-      const { data: { session } } = await supabase.auth.getSession();
-      return session?.access_token || null;
-    }
-  } catch (error) {
-    console.error('获取token失败:', error);
-  }
-  return null;
 }
 
 /**
@@ -82,11 +77,11 @@ export async function importFarms(file: File): Promise<ImportResult> {
   formData.append('file', file);
 
   try {
-    const token = await getToken();
+    const token = await authService.getRequiredAccessToken();
     const response = await fetch(`${SUPABASE_URL}/functions/v1/farm-file/import`, {
       method: 'POST',
       body: formData,
-      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      headers: { 'Authorization': `Bearer ${token}` },
     });
 
     const data = await response.json();
@@ -96,13 +91,13 @@ export async function importFarms(file: File): Promise<ImportResult> {
     } else {
       return {
         success: false,
-        message: data?.error ?? '导入失败',
+        message: authService.getProtectedActionErrorMessage(response.status, data?.error ?? '导入失败'),
       };
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     return {
       success: false,
-      message: err?.message ?? '导入失败: 系统异常',
+      message: err instanceof Error ? err.message : '导入失败: 系统异常',
     };
   }
 }
