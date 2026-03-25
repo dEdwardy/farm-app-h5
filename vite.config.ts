@@ -2,8 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-const isProd = process.env.NODE_ENV === 'production'
-const base = isProd ? '/farm-app/' : '/'
+const base = '/'
 
 export default defineConfig({
   base,
@@ -15,7 +14,7 @@ export default defineConfig({
       devOptions: {
         enabled: true
       },
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg', 'pwa-192x192.png'],
+      includeAssets: ['icon.svg', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
         name: '养殖场管理',
         short_name: 'FarmApp',

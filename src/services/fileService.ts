@@ -27,7 +27,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
  * POST /functions/v1/farm-file/export
  * Returns a Blob
  */
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://ngiewoolfwwojqzopbjo.supabase.co';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 
 async function parseErrorResponse(response: Response) {
   try {

@@ -9,7 +9,9 @@ import { useSplashScreen } from './components/SplashScreen'
 import { InstallPrompt } from './components/InstallPrompt'
 import { NetworkStatus } from './components/NetworkStatus'
 
-const basename = import.meta.env.PROD ? '/farm-app' : ''
+const basename = import.meta.env.BASE_URL === '/'
+  ? undefined
+  : import.meta.env.BASE_URL.replace(/\/$/, '')
 const FarmDetail = lazy(() => import('./pages/FarmDetail'))
 const FarmForm = lazy(() => import('./pages/FarmForm'))
 const Settings = lazy(() => import('./pages/Settings'))
