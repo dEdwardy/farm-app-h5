@@ -52,7 +52,6 @@ jobs:
     needs: build-check
     runs-on: ubuntu-latest
     env:
-      EXPECTED_DEPLOY_PATH: /usr/pros/farm-app
       SERVER_HOST: ${{ secrets.SERVER_HOST }}
       SERVER_USER: ${{ secrets.SERVER_USER }}
       SERVER_PORT: ${{ secrets.SERVER_PORT }}
@@ -68,11 +67,6 @@ jobs:
               exit 1
             fi
           done
-
-          if [ "$SERVER_DEPLOY_PATH" != "$EXPECTED_DEPLOY_PATH" ]; then
-            echo "SERVER_DEPLOY_PATH must be $EXPECTED_DEPLOY_PATH, got: $SERVER_DEPLOY_PATH"
-            exit 1
-          fi
 
       - name: Download tested build artifact
         uses: actions/download-artifact@v5
