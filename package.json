@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "build:prod": "cross-env NODE_ENV=production vite build",
+    "build": "cross-env APP_BASE=/farm-app/ tsc -b && cross-env APP_BASE=/farm-app/ vite build",
+    "build:vercel": "cross-env APP_BASE=/ tsc -b && cross-env APP_BASE=/ vite build",
+    "build:prod": "cross-env NODE_ENV=production APP_BASE=/farm-app/ vite build",
     "preview": "vite preview",
-    "preview:prod": "cross-env NODE_ENV=production vite preview --base /farm-app/",
+    "preview:prod": "cross-env NODE_ENV=production APP_BASE=/farm-app/ vite preview --base /farm-app/",
     "deploy": "bash deploy.sh"
   },
   "dependencies": {

@@ -2,7 +2,8 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-const base = '/'
+const normalizedBase = process.env.APP_BASE || '/'
+const base = normalizedBase.endsWith('/') ? normalizedBase : `${normalizedBase}/`
 
 export default defineConfig({
   base,
