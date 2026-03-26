@@ -552,9 +552,9 @@ export default function FarmForm() {
             </label>
           </div>
         ) : (
-          <div className="flex flex-wrap gap-3">
+          <div className="mt-3 grid grid-cols-3 gap-3">
             {images.map((img, i) => (
-              <div key={i} className="relative h-24 w-24 overflow-hidden rounded-[1.2rem] border border-white/70 bg-secondary shadow-sm">
+              <div key={i} className="relative aspect-square overflow-hidden rounded-[1.2rem] border border-white/70 bg-secondary shadow-sm">
                 {img.uploading ? (
                   <div className="w-full h-full flex items-center justify-center bg-gray-200">
                     <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
@@ -581,7 +581,7 @@ export default function FarmForm() {
                 )}
               </div>
             ))}
-            <label className="flex h-24 w-24 cursor-pointer items-center justify-center rounded-[1.2rem] border border-dashed border-primary/30 bg-white/70 transition hover:border-primary/50 hover:bg-white">
+            <label className="flex aspect-square cursor-pointer items-center justify-center rounded-[1.2rem] border border-dashed border-primary/30 bg-white/70 transition hover:border-primary/50 hover:bg-white">
               <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
