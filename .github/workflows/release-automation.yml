@@ -35,9 +35,62 @@ jobs:
       - name: Build
         run: npm run build
 
-  post-deploy-smoke:
+  deploy-aliyun:
     if: github.event_name == 'push' && !startsWith(github.event.head_commit.message, 'revert(auto):')
     needs: build-check
+    runs-on: ubuntu-latest
+    env:
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      SERVER_PORT: ${{ secrets.SERVER_PORT }}
+      SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+      SERVER_DEPLOY_PATH: ${{ secrets.SERVER_DEPLOY_PATH }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Validate deploy secrets
+        run: |
+          for key in SERVER_HOST SERVER_USER SERVER_PORT SERVER_SSH_KEY SERVER_DEPLOY_PATH; do
+            value="${!key:-}"
+            if [ -z "$value" ]; then
+              echo "Missing required secret: $key"
+              exit 1
+            fi
+          done
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$SERVER_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p "$SERVER_PORT" "$SERVER_HOST" >> ~/.ssh/known_hosts
+
+      - name: Upload dist to Aliyun server
+        run: |
+          ssh -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" "mkdir -p '$SERVER_DEPLOY_PATH'"
+          rsync -az --delete -e "ssh -p $SERVER_PORT" dist/ "$SERVER_USER@$SERVER_HOST:$SERVER_DEPLOY_PATH/"
+
+      - name: Reload nginx
+        run: |
+          ssh -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" "sudo nginx -t && sudo systemctl reload nginx"
+
+  post-deploy-smoke:
+    if: github.event_name == 'push' && !startsWith(github.event.head_commit.message, 'revert(auto):')
+    needs: deploy-aliyun
     runs-on: ubuntu-latest
     env:
       PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
@@ -75,9 +128,10 @@ jobs:
           check_url "${PRODUCTION_URL%/}/login"
 
   auto-rollback:
-    if: failure() && github.event_name == 'push' && !startsWith(github.event.head_commit.message, 'revert(auto):')
+    if: github.event_name == 'push' && !startsWith(github.event.head_commit.message, 'revert(auto):') && (needs.deploy-aliyun.result == 'failure' || needs.post-deploy-smoke.result == 'failure')
     needs:
       - build-check
+      - deploy-aliyun
       - post-deploy-smoke
     runs-on: ubuntu-latest
     steps:
