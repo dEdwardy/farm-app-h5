@@ -65,6 +65,10 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Write build fingerprint
+        run: |
+          printf '%s\n' "$GITHUB_SHA" > dist/build-info.txt
+
       - name: Validate deploy secrets
         run: |
           for key in SERVER_HOST SERVER_USER SERVER_PORT SERVER_SSH_KEY SERVER_DEPLOY_PATH; do
