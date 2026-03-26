@@ -56,11 +56,11 @@ jobs:
       SERVER_USER: ${{ secrets.SERVER_USER }}
       SERVER_PORT: ${{ secrets.SERVER_PORT }}
       SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
-      SERVER_DEPLOY_PATH: ${{ secrets.SERVER_DEPLOY_PATH }}
+      SERVER_DEPLOY_PATH: /usr/pros/farm-app
     steps:
       - name: Validate deploy secrets
         run: |
-          for key in SERVER_HOST SERVER_USER SERVER_PORT SERVER_SSH_KEY SERVER_DEPLOY_PATH; do
+          for key in SERVER_HOST SERVER_USER SERVER_PORT SERVER_SSH_KEY; do
             value="${!key:-}"
             if [ -z "$value" ]; then
               echo "Missing required secret: $key"

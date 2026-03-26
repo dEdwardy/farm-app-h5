@@ -23,8 +23,6 @@ Workflow file: `.github/workflows/release-automation.yml`
 - `SERVER_USER` e.g. `root` or deploy user
 - `SERVER_PORT` e.g. `22`
 - `SERVER_SSH_KEY` private key for SSH
-- `SERVER_DEPLOY_PATH` must be `/usr/pros/farm-app`
-
 ## Server Requirements
 
 - Nginx configured to serve `SERVER_DEPLOY_PATH`
