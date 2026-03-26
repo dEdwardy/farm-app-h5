@@ -35,6 +35,10 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Write build fingerprint
+        run: |
+          printf '%s\n' "$GITHUB_SHA" > dist/build-info.txt
+
   deploy-aliyun:
     if: github.event_name == 'push' && !startsWith(github.event.head_commit.message, 'revert(auto):')
     needs: build-check
@@ -82,7 +86,14 @@ jobs:
       - name: Upload dist to Aliyun server
         run: |
           ssh -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" "mkdir -p '$SERVER_DEPLOY_PATH'"
-          tar -czf - -C dist . | ssh -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" "find '$SERVER_DEPLOY_PATH' -mindepth 1 -maxdepth 1 -exec rm -rf {} + && tar -xzf - -C '$SERVER_DEPLOY_PATH'"
+          tar -czf dist.tar.gz -C dist .
+          ls -lh dist.tar.gz
+          scp -P "$SERVER_PORT" dist.tar.gz "$SERVER_USER@$SERVER_HOST:/tmp/farm-app.tar.gz"
+          ssh -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" "find '$SERVER_DEPLOY_PATH' -mindepth 1 -maxdepth 1 -exec rm -rf {} + && tar -xzf /tmp/farm-app.tar.gz -C '$SERVER_DEPLOY_PATH' && rm -f /tmp/farm-app.tar.gz"
+
+      - name: Verify deployed build fingerprint
+        run: |
+          ssh -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" "cat '$SERVER_DEPLOY_PATH/build-info.txt'"
 
       - name: Reload nginx
         run: |
@@ -94,6 +105,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+      BUILD_SHA: ${{ github.sha }}
     steps:
       - name: Validate production URL variable
         run: |
@@ -108,6 +120,13 @@ jobs:
       - name: Smoke check homepage and login
         run: |
           set -euo pipefail
+
+          build_info_url="${PRODUCTION_URL%/}/build-info.txt"
+          remote_sha=$(curl -L -sS "$build_info_url" | tr -d '\r\n')
+          if [ "$remote_sha" != "$BUILD_SHA" ]; then
+            echo "FAIL: build-info mismatch: expected $BUILD_SHA got $remote_sha"
+            exit 1
+          fi
 
           check_url() {
             local url="$1"
