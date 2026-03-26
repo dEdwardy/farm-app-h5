@@ -3,7 +3,11 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate } from 'react-router-dom'
+import { ArrowRight, Leaf, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { Button } from '../components/ui/button'
+import { Card, CardContent } from '../components/ui/card'
+import { Input } from '../components/ui/input'
 
 const loginSchema = z.object({
   email: z.string().min(1, '请输入邮箱').email('请输入有效邮箱'),
@@ -33,62 +37,58 @@ export default function Login() {
   }
 
   return (
-    <div className="h-screen bg-gradient-to-br from-primary-600 via-primary-500 to-teal-500 flex flex-col">
-      <div className="flex-1 flex flex-col justify-center px-6">
-        <div className="text-center mb-10">
-          <div className="w-24 h-24 bg-white/20 backdrop-blur-xl rounded-3xl mx-auto mb-5 flex items-center justify-center shadow-xl shadow-primary-500/30">
-            <span className="text-5xl">🐟</span>
+    <div className="min-h-screen overflow-hidden px-4 py-6 sm:px-6">
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-md flex-col justify-between">
+        <div className="page-hero mt-2">
+          <div className="relative z-10">
+            <p className="page-hero-kicker">Aquaculture Desk</p>
+            <h1 className="page-hero-title">养殖场管理</h1>
+            <p className="page-hero-description">把场所信息、养殖情况与尾水处理资料放进一个轻快、可靠的移动工作台。</p>
+            <div className="mt-6 grid grid-cols-2 gap-3 text-primary-foreground/80">
+              <div className="rounded-[1.4rem] border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm">
+                <ShieldCheck className="h-5 w-5" />
+                <p className="mt-3 text-sm font-medium">资料更清晰</p>
+              </div>
+              <div className="rounded-[1.4rem] border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm">
+                <Leaf className="h-5 w-5" />
+                <p className="mt-3 text-sm font-medium">现场更从容</p>
+              </div>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-white drop-shadow-sm">养殖场管理</h1>
-          <p className="text-primary-100 mt-3 text-lg">智能水产养殖管理专家</p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="bg-white/90 backdrop-blur-xl rounded-2xl p-6 shadow-2xl shadow-primary-900/20">
-          <div className="mb-5">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">邮箱</label>
-            <input
-              type="email"
-              {...register('email')}
-              placeholder="请输入邮箱"
-              className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:bg-white focus:border-primary-400 focus:ring-2 focus:ring-primary-100 focus:outline-none transition-all duration-200 bg-white/80"
-              autoCapitalize="none"
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1.5">{errors.email.message}</p>
-            )}
-          </div>
+        <Card className="mt-5 overflow-hidden">
+          <CardContent className="pt-5">
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <div className="mb-5">
+                <label className="app-label">邮箱</label>
+                <Input type="email" {...register('email')} placeholder="请输入邮箱地址" autoCapitalize="none" />
+                {errors.email ? <p className="app-error">{errors.email.message}</p> : null}
+              </div>
 
-          <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">密码</label>
-            <input
-              type="password"
-              {...register('password')}
-              placeholder="请输入密码"
-              className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:bg-white focus:border-primary-400 focus:ring-2 focus:ring-primary-100 focus:outline-none transition-all duration-200 bg-white/80"
-            />
-            {errors.password && (
-              <p className="text-red-500 text-sm mt-1.5">{errors.password.message}</p>
-            )}
-          </div>
+              <div className="mb-6">
+                <label className="app-label">密码</label>
+                <Input type="password" {...register('password')} placeholder="请输入登录密码" />
+                {errors.password ? <p className="app-error">{errors.password.message}</p> : null}
+              </div>
 
-          {error && (
-            <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl">
-              <p className="text-red-600 text-sm text-center">{error}</p>
-            </div>
-          )}
+              {error ? (
+                <div className="mb-5 rounded-[1.35rem] border border-destructive/20 bg-destructive/10 px-4 py-3">
+                  <p className="text-sm text-destructive">{error}</p>
+                </div>
+              ) : null}
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-gradient-to-r from-primary-500 to-primary-600 text-white py-4 rounded-xl font-semibold shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 hover:-translate-y-0.5 active:translate-y-0 disabled:bg-gray-200 disabled:shadow-none disabled:translate-y-0 transition-all duration-200"
-          >
-            {isSubmitting ? '登录中...' : '登录'}
-          </button>
-        </form>
-      </div>
+              <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? '登录中...' : '进入工作台'}
+                {!isSubmitting ? <ArrowRight className="h-4 w-4" /> : null}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
-      <div className="p-6 text-center">
-        <p className="text-primary-100/80 text-xs">© 2024 养殖场管理系统</p>
+        <div className="pb-4 pt-6 text-center text-xs text-muted-foreground">
+          © 2024 养殖场管理系统
+        </div>
       </div>
     </div>
   )

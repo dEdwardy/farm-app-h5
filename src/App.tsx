@@ -3,34 +3,51 @@ import { Suspense, lazy, useEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ToastProvider, useToast } from './components/Toast'
 import Layout from './components/Layout'
-import Login from './pages/Login'
-import FarmList from './pages/FarmList'
 import { useSplashScreen } from './components/SplashScreen'
 import { InstallPrompt } from './components/InstallPrompt'
 import { NetworkStatus } from './components/NetworkStatus'
+import { DevPerfPanel } from './components/DevPerfPanel'
+import { dataService } from './services/dataService'
 
 const basename = import.meta.env.BASE_URL === '/'
   ? undefined
   : import.meta.env.BASE_URL.replace(/\/$/, '')
+const Login = lazy(() => import('./pages/Login'))
+const FarmList = lazy(() => import('./pages/FarmList'))
 const FarmDetail = lazy(() => import('./pages/FarmDetail'))
 const FarmForm = lazy(() => import('./pages/FarmForm'))
 const Settings = lazy(() => import('./pages/Settings'))
 
 function PageLoading() {
   return (
-    <div className="flex items-center justify-center h-screen">
-      <div className="text-primary-500">加载中...</div>
+    <div className="flex h-screen items-center justify-center px-6">
+      <div className="surface-card-subtle inline-flex items-center gap-3 px-4 py-3 text-sm text-muted-foreground">
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary/35 border-t-primary" />
+        页面载入中...
+      </div>
     </div>
   )
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
+
+  useEffect(() => {
+    if (!user) {
+      return
+    }
+
+    void import('./pages/FarmList')
+    void dataService.prefetchFarms({ page: 1, pageSize: 10, searchQuery: '' })
+  }, [user])
   
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-primary-500">加载中...</div>
+      <div className="flex h-screen items-center justify-center px-6">
+        <div className="surface-card-subtle inline-flex items-center gap-3 px-4 py-3 text-sm text-muted-foreground">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary/35 border-t-primary" />
+          账户校验中...
+        </div>
       </div>
     )
   }
@@ -61,14 +78,15 @@ function App() {
           <ToastRegistrar />
           <InstallPrompt />
           <NetworkStatus />
+          <DevPerfPanel />
           <Routes>
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={<Suspense fallback={<PageLoading />}><Login /></Suspense>} />
             <Route path="/" element={
               <ProtectedRoute>
                 <Layout />
               </ProtectedRoute>
             }>
-              <Route index element={<FarmList />} />
+              <Route index element={<Suspense fallback={<PageLoading />}><FarmList /></Suspense>} />
               <Route path="farm/:id" element={<Suspense fallback={<PageLoading />}><FarmDetail /></Suspense>} />
               <Route path="farm/add" element={<Suspense fallback={<PageLoading />}><FarmForm /></Suspense>} />
               <Route path="farm/edit/:id" element={<Suspense fallback={<PageLoading />}><FarmForm /></Suspense>} />

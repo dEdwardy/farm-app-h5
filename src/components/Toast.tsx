@@ -63,10 +63,10 @@ function ToastContainer({ toasts, onClose }: { toasts: Toast[]; onClose: (id: nu
 
 function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
   const styles = {
-    success: 'bg-green-500 text-white',
-    error: 'bg-red-500 text-white',
-    warning: 'bg-yellow-500 text-white',
-    info: 'bg-blue-500 text-white',
+    success: 'bg-[#355142] text-white',
+    error: 'bg-[#a74d43] text-white',
+    warning: 'bg-[#b8833f] text-white',
+    info: 'bg-[#567985] text-white',
   }
 
   const icons = {

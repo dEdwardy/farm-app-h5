@@ -21,6 +21,14 @@ interface PWAInstallState {
 const STORAGE_KEY = 'pwa-install-dismissed'
 const IOS_INSTALL_INSTRUCTIONS = '在Safari中，点击分享按钮，然后选择"添加到主屏幕"'
 
+const logPwaDebug = (...args: unknown[]) => {
+  void args
+}
+
+const logPwaError = (...args: unknown[]) => {
+  void args
+}
+
 export function usePWAInstall() {
   const [state, setState] = useState<PWAInstallState>({
     canInstall: false,
@@ -48,7 +56,7 @@ export function usePWAInstall() {
   const handleBeforeInstallPrompt = useCallback((event: Event) => {
     event.preventDefault()
     const deferredPrompt = event as DeferredInstallPromptEvent
-    console.log('[PWA] beforeinstallprompt event fired')
+    logPwaDebug('beforeinstallprompt event fired')
     
     setState(prev => ({
       ...prev,
@@ -57,10 +65,10 @@ export function usePWAInstall() {
         try {
           await deferredPrompt.prompt()
           const { outcome } = await deferredPrompt.userChoice
-          console.log('[PWA] User choice:', outcome)
+          logPwaDebug('User choice:', outcome)
           return outcome
         } catch (err) {
-          console.error('[PWA] Install prompt error:', err)
+          logPwaError('Install prompt error:', err)
           throw err
         }
       },
@@ -87,7 +95,7 @@ export function usePWAInstall() {
       setState(prev => ({ ...prev, canInstall: false, installPrompt: null }))
       return result
     }
-    console.warn('[PWA] Install prompt not available. beforeinstallprompt event may not have fired.')
+    logPwaDebug('Install prompt not available. beforeinstallprompt event may not have fired.')
   }, [state.installPrompt])
 
   const dismissPrompt = useCallback(() => {

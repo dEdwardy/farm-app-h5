@@ -46,12 +46,49 @@ export interface PaginationParams {
   page: number
   pageSize: number
   searchQuery?: string
+  signal?: AbortSignal
 }
 
 export interface PaginatedResponse<T> {
   data: T[]
   totalCount: number
   error?: string
+}
+
+interface FarmListQueryParams {
+  page: number
+  pageSize: number
+  searchQuery?: string
+}
+
+const farmsCache = new Map<string, PaginatedResponse<FarmRow>>()
+const farmCountCache = new Map<string, number>()
+const FARM_LIST_SELECT_FIELDS = 'id,farm_name,address,responsible_person,water_area_acre,created_at'
+const FARM_LIST_SEARCH_FIELDS = ['farm_name', 'responsible_person', 'address', 'water_area_acre'] as const
+
+function buildFarmListSearchFilter(searchTerm: string) {
+  return FARM_LIST_SEARCH_FIELDS.map(field => `${field}.ilike.${searchTerm}`).join(',')
+}
+
+function normalizeSearchQuery(searchQuery?: string) {
+  return searchQuery?.trim() || ''
+}
+
+function getFarmsCacheKey(params: FarmListQueryParams) {
+  return JSON.stringify({
+    page: params.page,
+    pageSize: params.pageSize,
+    searchQuery: normalizeSearchQuery(params.searchQuery),
+  })
+}
+
+function getFarmCountCacheKey(searchQuery?: string) {
+  return normalizeSearchQuery(searchQuery)
+}
+
+function clearFarmsCache() {
+  farmsCache.clear()
+  farmCountCache.clear()
 }
 
 async function getClient() {
@@ -62,17 +99,58 @@ async function getClient() {
   return { ok: true, client }
 }
 
-function processFarmFiles(files: any[] | undefined) {
+interface FileInsertData {
+  farm_id: string
+  url: string
+  name: string
+  size: number
+  business_type: string
+  type: string
+  created_at: string
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function normalizeFileInput(file: FarmFile | string): FarmFile | null {
+  if (typeof file === 'string') {
+    return {
+      url: file,
+      name: file.split('/').pop() || '',
+      size: 0,
+    }
+  }
+
+  if (!file?.url) {
+    return null
+  }
+
+  return {
+    url: file.url,
+    name: file.name || file.url.split('/').pop() || '',
+    size: file.size || 0,
+    type: file.type,
+    business_type: file.business_type,
+  }
+}
+
+function processFarmFiles(files: unknown[] | undefined) {
   const farmImages: FarmFile[] = []
   const tailWaterImages: FarmFile[] = []
   const safetyInfoFiles: FarmFile[] = []
 
-  files?.forEach((file: any) => {
-    const fileInfo = {
-      url: file.url,
-      name: file.name || file.url.split('/').pop() || '',
-      size: file.size || 0
+  files?.forEach((file) => {
+    if (!isRecord(file) || typeof file.url !== 'string') {
+      return
     }
+
+    const fileInfo: FarmFile = {
+      url: file.url,
+      name: typeof file.name === 'string' && file.name ? file.name : file.url.split('/').pop() || '',
+      size: typeof file.size === 'number' ? file.size : 0,
+    }
+
     switch (file.business_type) {
       case 'farm_images':
         farmImages.push(fileInfo)
@@ -91,6 +169,12 @@ function processFarmFiles(files: any[] | undefined) {
 
 export const dataService = {
   async getFarms(params: PaginationParams): Promise<PaginatedResponse<FarmRow>> {
+    const cacheKey = getFarmsCacheKey(params)
+    const cached = farmsCache.get(cacheKey)
+    if (cached) {
+      return cached
+    }
+
     const check = await getClient()
     if (!check.ok || !check.client) {
       return { data: [], totalCount: 0, error: check.error }
@@ -100,46 +184,123 @@ export const dataService = {
       const offset = (params.page - 1) * params.pageSize
       let query = check.client
         .from('aquaculture_farms')
-        .select('*, files (url, business_type, type, name, size)', { count: 'exact' })
+        .select(FARM_LIST_SELECT_FIELDS)
         .is('deleted_at', null)
 
-      if (params.searchQuery && params.searchQuery.trim()) {
-        const searchTerm = `%${params.searchQuery.trim()}%`
-        query = query.or(
-          `farm_name.ilike.${searchTerm},address.ilike.${searchTerm},responsible_person.ilike.${searchTerm},contact_phone.ilike.${searchTerm},longitude_latitude.ilike.${searchTerm}`
-        )
+      if (params.signal) {
+        query = query.abortSignal(params.signal)
       }
 
-      const { data: farmData, error: fetchError, count } = await query
+      const normalizedQuery = normalizeSearchQuery(params.searchQuery)
+      if (normalizedQuery) {
+        const searchTerm = `%${normalizedQuery}%`
+        query = query.or(buildFarmListSearchFilter(searchTerm))
+      }
+
+      const { data: farmData, error: fetchError } = await query
         .range(offset, offset + params.pageSize - 1)
 
       if (fetchError) {
         return { data: [], totalCount: 0, error: getSupabaseErrorMessage(fetchError) }
       }
 
-      const cleaned = farmData?.map((row: any) => {
-        const { files, ...rest } = row
-        const { farmImages, tailWaterImages, safetyInfoFiles } = processFarmFiles(files)
+      const cachedCount = farmCountCache.get(getFarmCountCacheKey(params.searchQuery))
+
+      const cleaned = (farmData ?? []).map((row: unknown) => {
+        if (!isRecord(row)) {
+          return {
+            farm_name: '',
+            farm_images: [],
+            tail_water_images: [],
+            safety_info: [],
+          } as FarmRow
+        }
+
+        const normalizedRow = row as Partial<FarmRow>
 
         return {
-          ...rest,
-          farm_images: farmImages,
-          tail_water_images: tailWaterImages,
-          safety_info: safetyInfoFiles
-        }
-      }) ?? []
+          ...normalizedRow,
+          farm_name: typeof normalizedRow.farm_name === 'string' ? normalizedRow.farm_name : '',
+          farm_images: [],
+          tail_water_images: [],
+          safety_info: []
+        } as FarmRow
+      })
 
-      return {
+      const result = {
         data: cleaned,
-        totalCount: count ?? 0
+        totalCount: cachedCount ?? cleaned.length
       }
+      farmsCache.set(cacheKey, result)
+      return result
     } catch (error) {
-      console.error('getFarms 错误:', error)
+      if (params.signal?.aborted) {
+        return {
+          data: [],
+          totalCount: 0,
+        }
+      }
+
       return {
         data: [],
         totalCount: 0,
         error: getErrorMessage(error)
       }
+    }
+  },
+
+  async prefetchFarms(params: PaginationParams): Promise<void> {
+    try {
+      await Promise.all([
+        this.getFarms(params),
+        this.getFarmCount(params.searchQuery),
+      ])
+    } catch {
+    }
+  },
+
+  async getFarmCount(searchQuery?: string, signal?: AbortSignal): Promise<number> {
+    const cacheKey = getFarmCountCacheKey(searchQuery)
+    const cached = farmCountCache.get(cacheKey)
+    if (typeof cached === 'number') {
+      return cached
+    }
+
+    const check = await getClient()
+    if (!check.ok || !check.client) {
+      return 0
+    }
+
+    try {
+      let query = check.client
+        .from('aquaculture_farms')
+        .select('id', { count: 'exact', head: true })
+        .is('deleted_at', null)
+
+      if (signal) {
+        query = query.abortSignal(signal)
+      }
+
+      const normalizedQuery = normalizeSearchQuery(searchQuery)
+      if (normalizedQuery) {
+        const searchTerm = `%${normalizedQuery}%`
+        query = query.or(buildFarmListSearchFilter(searchTerm))
+      }
+
+      const { count, error } = await query
+
+      if (error) {
+        return 0
+      }
+
+      const total = count ?? 0
+      farmCountCache.set(cacheKey, total)
+      return total
+    } catch {
+      if (signal?.aborted) {
+        return 0
+      }
+      return 0
     }
   },
 
@@ -185,7 +346,7 @@ export const dataService = {
         'treatment_facility_area', 'treated_discharge_volume'
       ]
 
-      const insertData: any = { ...farmData }
+      const insertData: Record<string, unknown> = { ...farmData }
       numericFields.forEach((field) => {
         if (insertData[field] === '' || insertData[field] === undefined || insertData[field] === null) {
           insertData[field] = null
@@ -200,22 +361,24 @@ export const dataService = {
 
       if (error) return null
 
-      const allFilesData: any[] = []
+      const allFilesData: FileInsertData[] = []
 
-      const addFilesToData = (files: any[], businessType: string, type: string) => {
-        files?.forEach((file: any) => {
-          const url = typeof file === 'string' ? file : file.url
-          const name = typeof file === 'string' ? url.split('/').pop() || '' : file.name
-          const size = typeof file === 'string' ? 0 : file.size || 0
-            allFilesData.push({
-              farm_id: insertedFarm.id,
-              url,
-              name,
-              size,
-              business_type: businessType,
-              type,
-              created_at: new Date().toISOString()
-            })
+      const addFilesToData = (files: Array<FarmFile | string>, businessType: string, type: string) => {
+        files.forEach((file) => {
+          const normalized = normalizeFileInput(file)
+          if (!normalized) {
+            return
+          }
+
+          allFilesData.push({
+            farm_id: insertedFarm.id,
+            url: normalized.url,
+            name: normalized.name,
+            size: normalized.size || 0,
+            business_type: businessType,
+            type,
+            created_at: new Date().toISOString(),
+          })
         })
       }
 
@@ -225,14 +388,17 @@ export const dataService = {
 
       if (insertedFarm && allFilesData.length > 0) {
         try {
-          await check.client!.from('files').insert(allFilesData)
-        } catch (e) {
-          console.error('添加文件失败:', e)
+          await check.client.from('files').insert(allFilesData)
+        } catch (error) {
+          if (window.__showToast) {
+            window.__showToast(getErrorMessage(error), 'error')
+          }
         }
       }
 
       if (insertedFarm) {
-        const { data: filesData } = await check.client!
+        clearFarmsCache()
+        const { data: filesData } = await check.client
           .from('files')
           .select('id, url, business_type, name, size, type')
           .eq('farm_id', insertedFarm.id)
@@ -270,7 +436,7 @@ export const dataService = {
 
       const enumFields = ['operation_status', 'treatment_method', 'final_destination']
 
-      const updateData: any = { ...farmData }
+      const updateData: Record<string, unknown> = { ...farmData }
 
       numericFields.forEach((field) => {
         if (updateData[field] === '' || updateData[field] === undefined || updateData[field] === null) {
@@ -292,7 +458,6 @@ export const dataService = {
         .single()
 
       if (updateError) {
-        console.error('更新农场失败:', updateError)
         if (window.__showToast) {
           window.__showToast(getSupabaseErrorMessage(updateError), 'error')
         }
@@ -324,22 +489,23 @@ export const dataService = {
             const existingFileMap = new Map<string, FarmFile>()
             dbFiles.forEach(file => existingFileMap.set(file.url, file))
 
-            const allFilesData: any[] = []
+            const allFilesData: FileInsertData[] = []
 
             fileGroups.forEach(group => {
               if (Array.isArray(group.files)) {
-                group.files.forEach((file: any) => {
-                  const url = typeof file === 'string' ? file : file.url
-                  const name = typeof file === 'string' ? url.split('/').pop() || '' : file.name
-                  const type = typeof file === 'string' ? group.defaultType : file.type || group.defaultType
-                  const size = typeof file === 'string' ? 0 : file.size || 0
+                group.files.forEach((file) => {
+                  const normalized = normalizeFileInput(file)
+                  if (!normalized) {
+                    return
+                  }
+
                   allFilesData.push({
                     farm_id: id,
-                    url,
-                    name,
+                    url: normalized.url,
+                    name: normalized.name,
                     business_type: group.businessType,
-                    type,
-                    size,
+                    type: normalized.type || group.defaultType,
+                    size: normalized.size || 0,
                     created_at: new Date().toISOString()
                   })
                 })
@@ -364,12 +530,15 @@ export const dataService = {
               await check.client.from('files').insert(filesToAdd)
             }
           }
-        } catch (e) {
-          console.error('更新文件失败:', e)
+        } catch (error) {
+          if (window.__showToast) {
+            window.__showToast(getErrorMessage(error), 'error')
+          }
         }
       }
 
       if (updatedFarm) {
+        clearFarmsCache()
         const { data: filesData } = await check.client!
           .from('files')
           .select('id, url, business_type, name, size, type')
@@ -387,8 +556,7 @@ export const dataService = {
       }
 
       return null
-    } catch (error) {
-      console.error('更新农场信息失败:', error)
+    } catch {
       return null
     }
   },
@@ -403,9 +571,12 @@ export const dataService = {
         .update({ deleted_at: new Date().toISOString() })
         .eq('id', id)
 
+      if (!error) {
+        clearFarmsCache()
+      }
+
       return !error
     } catch (error) {
-      console.error('删除失败:', error)
       if (window.__showToast) {
         window.__showToast(getErrorMessage(error), 'error')
       }

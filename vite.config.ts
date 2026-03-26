@@ -62,6 +62,20 @@ export default defineConfig({
                 maxAgeSeconds: 60 * 60 * 24 * 30
               }
             }
+          },
+          {
+            urlPattern: ({ request, url }) => request.destination === 'image' && url.origin !== self.location.origin,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'remote-image-assets',
+              cacheableResponse: {
+                statuses: [0, 200]
+              },
+              expiration: {
+                maxEntries: 120,
+                maxAgeSeconds: 60 * 60 * 24 * 14
+              }
+            }
           }
         ]
       }

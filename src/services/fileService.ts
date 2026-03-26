@@ -15,7 +15,7 @@ export interface ImportResult {
     successCount: number;
     failCount: number;
     errors: ImportError[];
-    warnings: any[];
+    warnings: string[];
   };
 }
 

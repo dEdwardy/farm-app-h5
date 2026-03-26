@@ -1,7 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { BadgeInfo, LogOut, UserRound } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import { showErrorToast } from '../utils/errorHandler'
+import { Button } from '../components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
+import { PageHeader } from '../components/ui/page-header'
 
 export default function Settings() {
   const navigate = useNavigate()
@@ -16,74 +21,77 @@ export default function Settings() {
       setShowLogoutConfirm(false)
       navigate('/login')
     } catch (error) {
-      console.error('Logout failed:', error)
+      showErrorToast(error)
     } finally {
       setIsSigningOut(false)
     }
   }
 
   return (
-    <div className="h-full flex flex-col bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-primary-500 via-primary-600 to-emerald-600 text-white px-5 py-6 flex-shrink-0">
-        <h1 className="text-2xl font-bold">设置</h1>
-        <p className="text-primary-100 text-sm mt-1">管理您的账户</p>
-      </div>
+    <div className="app-page">
+      <div className="app-scroll space-y-4">
+        <PageHeader
+          eyebrow="Workspace"
+          title="设置"
+          description="查看当前账号和系统版本，保持移动端工作台处于稳定状态。"
+        />
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* User Card */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center">
-            <div className="w-14 h-14 bg-gradient-to-br from-primary-400 to-emerald-500 rounded-full flex items-center justify-center text-xl font-bold text-white shadow-lg">
-              {user?.email?.charAt(0).toUpperCase() || '?'}
-            </div>
-            <div className="ml-4 flex-1">
-              <p className="font-semibold text-gray-900 text-lg truncate">
-                {user?.email || '未知用户'}
-              </p>
-              <p className="text-sm text-gray-400 mt-0.5">
-                ID: {user?.id?.slice(0, 8) || '------'}
-              </p>
-            </div>
-            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Version */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center mr-3">
-              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
-              </svg>
-            </div>
+        <Card>
+          <CardHeader>
+            <div className="section-heading-icon"><UserRound className="h-5 w-5" /></div>
             <div>
-              <p className="text-gray-900 font-medium">版本</p>
-              <p className="text-sm text-gray-400">v1.0.0</p>
+              <CardTitle>当前账号</CardTitle>
+              <CardDescription>用于识别当前登录用户与账户状态。</CardDescription>
             </div>
-          </div>
-          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">最新</span>
-        </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-primary text-xl font-semibold text-primary-foreground shadow-lg shadow-primary/20">
+                {user?.email?.charAt(0).toUpperCase() || '?'}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-lg font-semibold text-foreground">{user?.email || '未知用户'}</p>
+                <p className="mt-1 text-sm text-muted-foreground">ID: {user?.id?.slice(0, 8) || '------'}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Logout Button */}
-        <button
-          type="button"
-          onClick={() => setShowLogoutConfirm(true)}
-          className="w-full py-4 mt-8 bg-white rounded-2xl text-red-500 font-semibold shadow-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
+        <Card>
+          <CardHeader>
+            <div className="section-heading-icon"><BadgeInfo className="h-5 w-5" /></div>
+            <div>
+              <CardTitle>应用信息</CardTitle>
+              <CardDescription>当前版本与运行状态概览。</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between rounded-[1.2rem] border border-border/70 bg-white/78 px-4 py-3.5 shadow-sm">
+              <div>
+                <p className="text-[0.82rem] uppercase tracking-[0.18em] text-muted-foreground">Application</p>
+                <p className="mt-2 text-base font-semibold text-foreground">养殖场管理系统</p>
+              </div>
+              <span className="chip">最新版本</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-[1.2rem] border border-border/70 bg-white/72 px-4 py-3 shadow-sm">
+                <p className="text-xs text-muted-foreground">版本号</p>
+                <p className="mt-2 text-lg font-semibold text-foreground">v1.0.0</p>
+              </div>
+              <div className="rounded-[1.2rem] border border-border/70 bg-white/72 px-4 py-3 shadow-sm">
+                <p className="text-xs text-muted-foreground">状态</p>
+                <p className="mt-2 text-lg font-semibold text-[#547060]">运行正常</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Button type="button" variant="destructive" size="lg" className="w-full" onClick={() => setShowLogoutConfirm(true)}>
+          <LogOut className="h-4 w-4" />
           退出登录
-        </button>
+        </Button>
 
-        <p className="text-center text-xs text-gray-300 mt-4">
-          养殖场管理 v1.0.0
-        </p>
+        <p className="pb-4 text-center text-xs text-muted-foreground">养殖场管理 v1.0.0</p>
       </div>
 
       <ConfirmDialog

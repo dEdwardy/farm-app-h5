@@ -21,6 +21,7 @@ Thumbs.db
 
 # Local tooling artifacts
 .agents/
+.opencode/
 .omc/
 AGENTS.md
 opencode.json

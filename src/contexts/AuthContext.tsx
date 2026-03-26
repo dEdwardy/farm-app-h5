@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import type { User } from '@supabase/supabase-js'
 import { authService } from '../services/authService'
 import { getSupabase } from '../services/supabase'
+import { endPerfMeasure, startPerfMeasure } from '../utils/perf'
 
 interface AuthContextType {
   user: User | null
@@ -29,6 +30,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let isMounted = true
     let unsubscribe: (() => void) | undefined
 
+    startPerfMeasure('auth:init')
+
     const checkAuth = async () => {
       try {
         const client = await getSupabase()
@@ -46,11 +49,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           setUser(session?.user ?? null)
           setLoading(false)
+          endPerfMeasure('auth:init')
         })
         unsubscribe = () => data.subscription.unsubscribe()
 
         if (!hasLocalSession()) {
           setLoading(false)
+          endPerfMeasure('auth:init')
           return
         }
 
@@ -59,10 +64,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(session.user)
         }
       } catch (error) {
-        console.error('检查登录状态失败:', error)
+        if (window.__showToast) {
+          window.__showToast('检查登录状态失败，请稍后重试', 'error')
+        }
       } finally {
         if (isMounted) {
           setLoading(false)
+          endPerfMeasure('auth:init')
         }
       }
     }

@@ -45,6 +45,8 @@ const GENERIC_ERROR_MAP: Record<string, string> = {
   'Failed to fetch': '网络连接失败，请检查网络设置',
   'NetworkError': '网络错误，请检查网络连接',
   'TypeError: Failed to fetch': '无法连接到服务器，请检查网络',
+  '请求超时，请稍后重试': '请求超时，请稍后重试',
+  '上传超时，请检查网络后重试': '上传超时，请检查网络后重试',
 }
 
 // 数据库错误码映射 (PostgreSQL)
@@ -59,10 +61,22 @@ const DB_ERROR_CODE_MAP: Record<string, string> = {
   '42703': '字段不存在',
 }
 
+interface ErrorWithCode {
+  code?: string
+  message?: string
+  details?: string
+  hint?: string
+  name?: string
+}
+
+function isErrorWithFields(error: unknown): error is ErrorWithCode {
+  return typeof error === 'object' && error !== null
+}
+
 /**
  * 从 Supabase 错误对象中提取友好错误消息
  */
-export function getSupabaseErrorMessage(error: any): string {
+export function getSupabaseErrorMessage(error: unknown): string {
   if (!error) return '操作失败，请稍后重试'
 
   // 如果是字符串直接返回
@@ -71,17 +85,17 @@ export function getSupabaseErrorMessage(error: any): string {
   }
 
   // Supabase Auth 错误
-  if (error.code && SUPABASE_ERROR_MAP[error.code]) {
+  if (isErrorWithFields(error) && error.code && SUPABASE_ERROR_MAP[error.code]) {
     return SUPABASE_ERROR_MAP[error.code]
   }
 
   // PostgreSQL 错误码 (dataService 返回的错误)
-  if (error.code && DB_ERROR_CODE_MAP[error.code]) {
+  if (isErrorWithFields(error) && error.code && DB_ERROR_CODE_MAP[error.code]) {
     return DB_ERROR_CODE_MAP[error.code]
   }
 
   // Supabase 错误消息
-  if (error.message) {
+  if (isErrorWithFields(error) && error.message) {
     // 检查是否是已知的英文错误消息
     for (const [key, value] of Object.entries(GENERIC_ERROR_MAP)) {
       if (error.message.includes(key)) {
@@ -92,11 +106,11 @@ export function getSupabaseErrorMessage(error: any): string {
   }
 
   // PostgREST 错误
-  if (error.details) {
+  if (isErrorWithFields(error) && error.details) {
     return `数据错误: ${error.details}`
   }
 
-  if (error.hint) {
+  if (isErrorWithFields(error) && error.hint) {
     return error.hint
   }
 
@@ -106,10 +120,10 @@ export function getSupabaseErrorMessage(error: any): string {
 /**
  * 从网络错误中提取友好消息
  */
-export function getNetworkErrorMessage(error: any): string {
+export function getNetworkErrorMessage(error: unknown): string {
   if (!error) return '网络错误，请稍后重试'
 
-  const message = error.message || String(error)
+  const message = isErrorWithFields(error) && error.message ? error.message : String(error)
 
   for (const [key, value] of Object.entries(GENERIC_ERROR_MAP)) {
     if (message.includes(key)) {
@@ -140,7 +154,7 @@ export function getNetworkErrorMessage(error: any): string {
  * 统一错误处理函数
  * 自动识别错误类型并返回友好消息
  */
-export function getErrorMessage(error: any): string {
+export function getErrorMessage(error: unknown): string {
   if (!error) return '操作失败，请稍后重试'
 
   // 如果已经是字符串
@@ -157,12 +171,12 @@ export function getErrorMessage(error: any): string {
   }
 
   // Supabase 错误 (包含 code)
-  if (error.code) {
+  if (isErrorWithFields(error) && error.code) {
     return getSupabaseErrorMessage(error)
   }
 
   // 网络错误
-  if (error.name === 'TypeError' || error.message?.includes('fetch')) {
+  if (isErrorWithFields(error) && (error.name === 'TypeError' || error.message?.includes('fetch'))) {
     return getNetworkErrorMessage(error)
   }
 
@@ -177,9 +191,8 @@ export function getErrorMessage(error: any): string {
 /**
  * 显示错误提示（用于非 React 环境）
  */
-export function showErrorToast(message: string | any): void {
+export function showErrorToast(message: string | unknown): void {
   const text = typeof message === 'string' ? message : getErrorMessage(message)
-  console.error('[Error]', text)
 
   // 如果有全局 toast 函数，调用它
   if (window.__showToast) {
@@ -194,7 +207,6 @@ export function showErrorToast(message: string | any): void {
  * 显示成功提示
  */
 export function showSuccessToast(message: string): void {
-  console.log('[Success]', message)
   if (window.__showToast) {
     window.__showToast(message, 'success')
   }

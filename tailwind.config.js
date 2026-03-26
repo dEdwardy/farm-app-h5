@@ -6,20 +6,81 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: [
+          '"Noto Sans SC"',
+          '"PingFang SC"',
+          '"Hiragino Sans GB"',
+          '"Microsoft YaHei"',
+          'sans-serif',
+        ],
+        display: [
+          '"Noto Serif SC"',
+          '"Songti SC"',
+          '"STSong"',
+          'serif',
+        ],
+      },
       colors: {
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
         primary: {
-          50: '#e8f5e9',
-          100: '#c8e6c9',
-          200: '#a5d6a7',
-          300: '#81c784',
-          400: '#66bb6a',
-          500: '#4CAF50',
-          600: '#43a047',
-          700: '#388e3c',
-          800: '#2e7d32',
-          900: '#1b5e20',
-        }
-      }
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+          50: '#eef6ef',
+          100: '#d9e9dc',
+          200: '#b6d1bc',
+          300: '#8fb697',
+          400: '#678f72',
+          500: '#476857',
+          600: '#395247',
+          700: '#2f433a',
+          800: '#25362f',
+          900: '#18231f',
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+      },
+      borderRadius: {
+        xl: 'var(--radius-xl)',
+        lg: 'var(--radius-lg)',
+        md: 'var(--radius-md)',
+        sm: 'var(--radius-sm)',
+      },
+      boxShadow: {
+        panel: 'var(--shadow-panel)',
+        float: 'var(--shadow-float)',
+        insetsoft: 'var(--shadow-inset)',
+      },
+      backgroundImage: {
+        'field-glow': 'radial-gradient(circle at top, rgba(104, 143, 114, 0.2), transparent 48%)',
+        'earth-grid': 'linear-gradient(rgba(71, 104, 87, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(71, 104, 87, 0.05) 1px, transparent 1px)',
+      },
     },
   },
   plugins: [],

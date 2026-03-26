@@ -1,11 +1,11 @@
 :root {
-  --pwa-primary: #4CAF50;
-  --pwa-primary-light: #81c784;
-  --pwa-primary-dark: #388e3c;
-  --pwa-bg: #ffffff;
-  --pwa-bg-secondary: #f5f5f5;
-  --pwa-text: #212121;
-  --pwa-text-secondary: #757575;
+  --pwa-primary: #5d7e69;
+  --pwa-primary-light: #8fada0;
+  --pwa-primary-dark: #4d6758;
+  --pwa-bg: #fcfaf4;
+  --pwa-bg-secondary: #ece8df;
+  --pwa-text: #2f3e34;
+  --pwa-text-secondary: #6f7b72;
   --pwa-error: #f44336;
   --pwa-warning: #ff9800;
   --pwa-success: #4CAF50;
@@ -18,7 +18,9 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, var(--pwa-primary) 0%, var(--pwa-primary-dark) 100%);
+  background:
+    radial-gradient(circle at top, rgba(189, 205, 186, 0.45), transparent 36%),
+    linear-gradient(160deg, #f8f4ec 0%, #f1ece3 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -40,16 +42,17 @@
 }
 
 .pwa-splash-logo {
-  width: 120px;
-  height: 120px;
-  background: var(--pwa-bg);
-  border-radius: 24px;
+  width: 104px;
+  height: 104px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(124, 150, 129, 0.22);
+  border-radius: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  margin-bottom: 24px;
-  animation: splash-bounce 0.6s ease-out;
+  box-shadow: 0 16px 40px rgba(71, 93, 78, 0.15);
+  margin-bottom: 18px;
+  animation: splash-bounce 0.45s ease-out;
 }
 
 .pwa-splash-logo svg {
@@ -343,17 +346,20 @@
 
 .pwa-loading-container {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 32px;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(124, 150, 129, 0.24);
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .pwa-loading-text {
   font-size: 14px;
-  color: var(--pwa-text-secondary);
+  color: var(--pwa-text);
   font-weight: 500;
+  letter-spacing: 0.02em;
 }
 
 .pwa-loading-dots {
