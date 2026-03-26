@@ -8,11 +8,9 @@ Workflow file: `.github/workflows/release-automation.yml`
 2. `push master` runs `deploy-aliyun`
    - Build project
    - Stream `dist/` to server path with `tar + ssh`
+   - Verify deployed `build-info.txt` on the server through SSH
    - Reload Nginx
-3. `post-deploy-smoke` checks:
-   - `${PRODUCTION_URL}`
-   - `${PRODUCTION_URL}/login`
-4. If deploy/smoke fails, `auto-rollback` creates a revert commit
+3. `post-deploy-smoke` and `auto-rollback` are currently disabled
 
 ## Required GitHub Secrets
 
