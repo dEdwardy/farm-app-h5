@@ -6,8 +6,9 @@ set -e
 
 # 配置
 SERVER=${1:-"user@your-server.com"}
-REMOTE_PATH="/var/www/farm-app"
+REMOTE_PATH="/usr/pros/farm-app"
 BUILD_DIR="dist"
+BUILD_SHA=${GIT_SHA:-$(git rev-parse HEAD 2>/dev/null || date +%s)}
 
 echo "🚀 开始部署养殖场管理 PWA..."
 echo "目标服务器: $SERVER"
@@ -25,6 +26,8 @@ if [ ! -d "$BUILD_DIR" ]; then
 fi
 
 echo "✅ 构建完成"
+printf '%s\n' "$BUILD_SHA" > "$BUILD_DIR/build-info.txt"
+echo "🧾 构建指纹: $BUILD_SHA"
 ls -la $BUILD_DIR
 
 # 3. 上传到服务器
@@ -32,6 +35,9 @@ echo ""
 echo "📤 上传文件到服务器..."
 ssh $SERVER "mkdir -p $REMOTE_PATH"
 rsync -avz --delete $BUILD_DIR/ $SERVER:$REMOTE_PATH/
+
+echo "🔍 校验远端构建指纹..."
+ssh $SERVER "test -f $REMOTE_PATH/build-info.txt && cat $REMOTE_PATH/build-info.txt"
 
 # 4. 设置权限
 echo ""
@@ -49,7 +55,7 @@ echo "✅ 部署完成！"
 echo ""
 echo "📝 后续步骤:"
 echo "1. 确保 nginx 配置已正确设置"
-echo "2. 访问 https://your-domain.com/farm-app/ 测试"
+echo "2. 访问 https://your-domain.com/farm-app/ 和 https://your-domain.com/farm-app/build-info.txt 测试"
 echo "3. 检查 PWA 安装功能是否正常"
 echo ""
 echo "🔧 Nginx 配置参考: nginx.conf"

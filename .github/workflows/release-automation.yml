@@ -39,36 +39,26 @@ jobs:
         run: |
           printf '%s\n' "$GITHUB_SHA" > dist/build-info.txt
 
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: farm-app-dist-${{ github.sha }}
+          path: dist
+          if-no-files-found: error
+          retention-days: 14
+
   deploy-aliyun:
     if: github.event_name == 'push' && !startsWith(github.event.head_commit.message, 'revert(auto):')
     needs: build-check
     runs-on: ubuntu-latest
     env:
+      EXPECTED_DEPLOY_PATH: /usr/pros/farm-app
       SERVER_HOST: ${{ secrets.SERVER_HOST }}
       SERVER_USER: ${{ secrets.SERVER_USER }}
       SERVER_PORT: ${{ secrets.SERVER_PORT }}
       SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
       SERVER_DEPLOY_PATH: ${{ secrets.SERVER_DEPLOY_PATH }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Setup Node
-        uses: actions/setup-node@v5
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-
-      - name: Write build fingerprint
-        run: |
-          printf '%s\n' "$GITHUB_SHA" > dist/build-info.txt
-
       - name: Validate deploy secrets
         run: |
           for key in SERVER_HOST SERVER_USER SERVER_PORT SERVER_SSH_KEY SERVER_DEPLOY_PATH; do
@@ -78,6 +68,17 @@ jobs:
               exit 1
             fi
           done
+
+          if [ "$SERVER_DEPLOY_PATH" != "$EXPECTED_DEPLOY_PATH" ]; then
+            echo "SERVER_DEPLOY_PATH must be $EXPECTED_DEPLOY_PATH, got: $SERVER_DEPLOY_PATH"
+            exit 1
+          fi
+
+      - name: Download tested build artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: farm-app-dist-${{ github.sha }}
+          path: dist
 
       - name: Setup SSH key
         run: |
@@ -89,6 +90,7 @@ jobs:
 
       - name: Upload dist to Aliyun server
         run: |
+          echo "Deploying commit $GITHUB_SHA to $SERVER_USER@$SERVER_HOST:$SERVER_DEPLOY_PATH"
           ssh -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" "mkdir -p '$SERVER_DEPLOY_PATH'"
           tar -czf dist.tar.gz -C dist .
           ls -lh dist.tar.gz
@@ -97,7 +99,13 @@ jobs:
 
       - name: Verify deployed build fingerprint
         run: |
-          ssh -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" "cat '$SERVER_DEPLOY_PATH/build-info.txt'"
+          DEPLOYED_SHA=$(ssh -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" "cat '$SERVER_DEPLOY_PATH/build-info.txt'")
+          echo "Remote build fingerprint: $DEPLOYED_SHA"
+
+          if [ "$DEPLOYED_SHA" != "$GITHUB_SHA" ]; then
+            echo "Remote fingerprint mismatch. Expected $GITHUB_SHA, got $DEPLOYED_SHA"
+            exit 1
+          fi
 
       - name: Reload nginx
         run: |
