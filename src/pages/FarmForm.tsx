@@ -10,7 +10,7 @@ import { farmFormSchema, FarmFormData, fieldMetaMap } from '../types/schemas'
 import type { FarmFile } from '../types/farm'
 import type { FarmRow as ServiceFarmRow } from '../services/dataService'
 import { getErrorMessage } from '../utils/errorHandler'
-import { getThumbnailUrl } from '../utils/imageUrl'
+import { getThumbnailUrl, normalizeImageUrl } from '../utils/imageUrl'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { PageHeader } from '../components/ui/page-header'
@@ -122,14 +122,14 @@ const revokeObjectUrl = (url: string) => {
 const toImageItem = (file: FarmFile | string, fallbackName: string, index: number): ImageItem => {
   if (typeof file === 'string') {
     return {
-      url: file,
+      url: normalizeImageUrl(file),
       name: file.split('/').pop() || `${fallbackName}_${index}`,
       size: 0,
     }
   }
 
   return {
-    url: file.url,
+    url: normalizeImageUrl(file.url),
     name: file.name || file.url.split('/').pop() || `${fallbackName}_${index}`,
     size: file.size || 0,
   }
@@ -138,14 +138,14 @@ const toImageItem = (file: FarmFile | string, fallbackName: string, index: numbe
 const toFarmFile = (file: FarmFile | string, index: number): FarmFile => {
   if (typeof file === 'string') {
     return {
-      url: file,
+      url: normalizeImageUrl(file),
       name: file.split('/').pop() || `file_${index}`,
       size: 0,
     }
   }
 
   return {
-    url: file.url,
+    url: normalizeImageUrl(file.url),
     name: file.name || file.url.split('/').pop() || `file_${index}`,
     size: file.size || 0,
     type: file.type,

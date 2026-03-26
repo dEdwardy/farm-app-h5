@@ -6,7 +6,7 @@ import { FarmFile, FarmRow, FormFile } from '../types/farm'
 import { useToast } from '../components/Toast'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { getErrorMessage } from '../utils/errorHandler'
-import { getThumbnailUrl } from '../utils/imageUrl'
+import { getThumbnailUrl, normalizeImageUrl } from '../utils/imageUrl'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { PageHeader } from '../components/ui/page-header'
@@ -67,8 +67,6 @@ const getAssetSize = (img: FarmAsset): number => {
   return 'size' in img && typeof img.size === 'number' ? img.size : 0
 }
 
-const normalizeImageUrl = (url: string): string => url.trim()
-
 export default function FarmDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -126,8 +124,8 @@ export default function FarmDetail() {
   }
 
   const getImageSrc = (img: FarmAsset): string => {
-    if (typeof img === 'string') return img
-    return img?.url || ''
+    if (typeof img === 'string') return normalizeImageUrl(img)
+    return normalizeImageUrl(img?.url || '')
   }
 
   const getImageName = (img: FarmAsset, index: number) => {
@@ -390,7 +388,7 @@ export default function FarmDetail() {
                       <p className="mt-1 text-xs text-muted-foreground">可用于归档或现场核验下载</p>
                     </div>
                     <Button asChild variant="secondary" size="sm">
-                      <a href={file.url} download={file.name}>
+                      <a href={normalizeImageUrl(file.url)} download={file.name}>
                         <ArrowDownToLine className="h-4 w-4" />
                         下载
                       </a>

@@ -8,6 +8,14 @@ const IMAGE_QUALITY = 0.78
 const SIGN_URL_TIMEOUT = 12000
 const UPLOAD_TIMEOUT = 45000
 
+function normalizeImageUrl(url: string) {
+  if (url.startsWith('http://')) {
+    return `https://${url.slice('http://'.length)}`
+  }
+
+  return url
+}
+
 function createTimeoutError(message: string) {
   const error = new Error(message)
   error.name = 'TimeoutError'
@@ -182,7 +190,7 @@ export async function uploadImage(file: File | Blob): Promise<string> {
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
           const urlObj = new URL(data.uploadUrl)
-          resolve(`${urlObj.origin}${urlObj.pathname}`)
+          resolve(normalizeImageUrl(`${urlObj.origin}${urlObj.pathname}`))
         } else {
           reject(new Error(`上传失败: ${xhr.status} - ${xhr.responseText}`))
         }

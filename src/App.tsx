@@ -1,13 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { Suspense, lazy, useEffect } from 'react'
+import { Suspense, lazy, useEffect, useState, type ComponentType } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ToastProvider, useToast } from './components/Toast'
 import Layout from './components/Layout'
 import { useSplashScreen } from './components/SplashScreen'
 import { InstallPrompt } from './components/InstallPrompt'
 import { NetworkStatus } from './components/NetworkStatus'
-import { DevPerfPanel } from './components/DevPerfPanel'
-import { dataService } from './services/dataService'
 
 const basename = import.meta.env.BASE_URL === '/'
   ? undefined
@@ -37,8 +35,20 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       return
     }
 
-    void import('./pages/FarmList')
-    void dataService.prefetchFarms({ page: 1, pageSize: 10, searchQuery: '' })
+    let cancelled = false
+
+    void import('./services/dataService').then(({ dataService }) => {
+      if (cancelled) {
+        return
+      }
+
+      void import('./pages/FarmList')
+      void dataService.prefetchFarms({ page: 1, pageSize: 10, searchQuery: '' })
+    })
+
+    return () => {
+      cancelled = true
+    }
   }, [user])
   
   if (loading) {
@@ -68,6 +78,34 @@ function ToastRegistrar() {
   return null
 }
 
+function DevPerfPanelGate() {
+  const [Panel, setPanel] = useState<ComponentType | null>(null)
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return
+    }
+
+    let cancelled = false
+
+    void import('./components/DevPerfPanel').then(({ DevPerfPanel }) => {
+      if (!cancelled) {
+        setPanel(() => DevPerfPanel)
+      }
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (!Panel) {
+    return null
+  }
+
+  return <Panel />
+}
+
 function App() {
   useSplashScreen()
   
@@ -78,7 +116,7 @@ function App() {
           <ToastRegistrar />
           <InstallPrompt />
           <NetworkStatus />
-          <DevPerfPanel />
+          <DevPerfPanelGate />
           <Routes>
             <Route path="/login" element={<Suspense fallback={<PageLoading />}><Login /></Suspense>} />
             <Route path="/" element={

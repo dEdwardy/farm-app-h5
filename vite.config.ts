@@ -10,6 +10,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      injectRegister: false,
       registerType: 'autoUpdate',
       filename: 'sw.js',
       devOptions: {
@@ -54,6 +55,20 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
+            urlPattern: ({ request, url }) => request.destination === 'image' && url.origin === self.location.origin,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'local-image-assets',
+              cacheableResponse: {
+                statuses: [0, 200]
+              },
+              expiration: {
+                maxEntries: 80,
+                maxAgeSeconds: 60 * 60 * 24 * 30
+              }
+            }
+          },
+          {
             urlPattern: /.*\/splash.*\.(png|jpg|jpeg|webp|svg)$/i,
             handler: 'CacheFirst',
             options: {
@@ -75,6 +90,20 @@ export default defineConfig({
               expiration: {
                 maxEntries: 120,
                 maxAgeSeconds: 60 * 60 * 24 * 14
+              }
+            }
+          },
+          {
+            urlPattern: ({ url }) => /\/(icon\.svg|pwa-192x192\.png|pwa-512x512\.png)$/.test(url.pathname),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'app-icons',
+              cacheableResponse: {
+                statuses: [0, 200]
+              },
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365
               }
             }
           }
