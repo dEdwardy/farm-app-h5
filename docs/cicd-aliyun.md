@@ -7,7 +7,7 @@ Workflow file: `.github/workflows/release-automation.yml`
 1. `pull_request` / `push master` runs `build-check`
 2. `push master` runs `deploy-aliyun`
    - Build project
-   - Upload `dist/` to server path with rsync
+   - Stream `dist/` to server path with `tar + ssh`
    - Reload Nginx
 3. `post-deploy-smoke` checks:
    - `${PRODUCTION_URL}`

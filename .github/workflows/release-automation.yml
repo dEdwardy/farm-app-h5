@@ -61,9 +61,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Install rsync
-        run: sudo apt-get update && sudo apt-get install -y rsync
-
       - name: Validate deploy secrets
         run: |
           for key in SERVER_HOST SERVER_USER SERVER_PORT SERVER_SSH_KEY SERVER_DEPLOY_PATH; do
@@ -85,7 +82,7 @@ jobs:
       - name: Upload dist to Aliyun server
         run: |
           ssh -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" "mkdir -p '$SERVER_DEPLOY_PATH'"
-          rsync -az --delete -e "ssh -p $SERVER_PORT" dist/ "$SERVER_USER@$SERVER_HOST:$SERVER_DEPLOY_PATH/"
+          tar -czf - -C dist . | ssh -p "$SERVER_PORT" "$SERVER_USER@$SERVER_HOST" "find '$SERVER_DEPLOY_PATH' -mindepth 1 -maxdepth 1 -exec rm -rf {} + && tar -xzf - -C '$SERVER_DEPLOY_PATH'"
 
       - name: Reload nginx
         run: |
